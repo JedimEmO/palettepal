@@ -1,0 +1,36 @@
+[package]
+name = "palettepal"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+
+anyhow.workspace = true
+dominator.workspace = true
+dwind.workspace = true
+dwui.workspace = true
+dwind-macros.workspace = true
+futures-signals.workspace = true
+js-sys.workspace = true
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+wasm-log.workspace = true
+web-sys.workspace = true
+log.workspace = true
