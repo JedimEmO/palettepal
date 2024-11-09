@@ -1,3 +1,3 @@
 pub mod main_view;
-pub mod webgl_test;
+pub mod color_panel;
 pub mod geometry;

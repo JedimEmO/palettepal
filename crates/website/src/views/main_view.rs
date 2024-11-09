@@ -1,11 +1,11 @@
-use crate::views::webgl_test::color_panel;
+use crate::views::color_panel::color_panel;
 use dominator::{Dom};
 use dwind::prelude::*;
 use futures_signals::signal::{Mutable};
 
 pub fn main_view() -> Dom {
     let color = PaletteColor {
-        hue: Mutable::new(0.4),
+        hue: Mutable::new(26.),
     };
 
     html!("div", {

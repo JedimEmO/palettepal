@@ -14,12 +14,19 @@ vec3 hsl2rgb( in vec3 c )
     return c.z + c.y * (rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
 }
 
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
 void main() {
     vec2 relative_pos = vec2(gl_FragCoord[0], gl_FragCoord[1]) / u_resolution;
     float h = u_hue;
     float s = relative_pos[0];
     float l = relative_pos[1];
-    vec3 color = hsl2rgb(vec3(h, s, l));
+    vec3 color = hsv2rgb(vec3(h, s, l));
     fragColor = vec4(color, 0.0);
 }
 

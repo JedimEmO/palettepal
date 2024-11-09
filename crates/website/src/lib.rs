@@ -5,6 +5,7 @@ extern crate dominator;
 extern crate dwind_macros;
 
 pub mod views;
+pub mod widgets;
 
 use crate::views::main_view::main_view;
 use dominator::{append_dom, body, stylesheet};

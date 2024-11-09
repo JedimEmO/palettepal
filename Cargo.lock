@@ -197,7 +197,7 @@ dependencies = [
  "dwind",
  "dwind-macros",
  "futures-signals",
- "futures-signals-component-macro",
+ "futures-signals-component-macro 0.1.1",
  "log",
  "once_cell",
  "serde",
@@ -255,6 +255,18 @@ checksum = "8b79e4305cce6403d6ee1112a80166f6d2707bc0f6996ee56a8ad5678fa4ae4f"
 dependencies = [
  "convert_case",
  "dominator",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "futures-signals-component-macro"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d9df8f39b67d762e734521e9a3444ef6fd0c8700f91312571d17d9da84e9e99"
+dependencies = [
+ "convert_case",
  "proc-macro2",
  "quote",
  "syn",
@@ -395,6 +407,7 @@ dependencies = [
  "dwind-macros",
  "dwui",
  "futures-signals",
+ "futures-signals-component-macro 0.3.0",
  "glam",
  "js-sys",
  "log",

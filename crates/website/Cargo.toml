@@ -28,6 +28,7 @@ dwind.workspace = true
 dwui.workspace = true
 dwind-macros.workspace = true
 futures-signals.workspace = true
+futures-signals-component-macro = "0.3.0"
 glam.workspace = true
 js-sys.workspace = true
 wasm-bindgen.workspace = true
