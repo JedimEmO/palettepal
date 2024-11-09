@@ -1,6 +1,7 @@
 use web_sys::{WebGl2RenderingContext, WebGlProgram};
 use crate::views::geometry::gl_utils::{compile_shader, link_program};
 
+#[repr(C)]
 pub struct ColorSpaceVertex {
     pub pos: [f32; 3],
     pub hsx: [f32; 3],

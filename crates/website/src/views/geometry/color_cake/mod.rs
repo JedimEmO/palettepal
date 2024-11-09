@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use dominator::Dom;
 use futures_signals::signal::{ReadOnlyMutable, SignalExt};
 use glam::Vec3;
-use log::error;
+use log::{error, info};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::WebGl2RenderingContext;
 use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
@@ -33,12 +33,11 @@ pub fn color_cake(hue: ReadOnlyMutable<f32>) -> Dom {
 }
 
 pub struct ColorCake {
-    shader_program: ShaderProgram
+    shader_program: ShaderProgram,
 }
 
 impl ColorCake {
     pub fn new(context: &WebGl2RenderingContext) -> anyhow::Result<Self> {
-
         let mut sides = place_cylinder_sides();
         let mut top_disk = place_cylinder_circle(true);
         let mut bottom_disk = place_cylinder_circle(false);
@@ -61,7 +60,7 @@ impl ColorCake {
             include_str!("vertex.glsl"),
             include_str!("fragment.glsl"),
             vertices,
-            geometries
+            geometries,
         )?;
 
         Ok(Self {
@@ -84,10 +83,14 @@ impl ColorCake {
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
 
         unsafe {
-            let position_view = js_sys::Float32Array::view_mut_raw((&mut self.shader_program.vertices).as_mut_ptr() as *mut f32, self.shader_program.vertices.len() * size_of::<ColorSpaceVertex>());
+            let data_view = js_sys::Float32Array::view_mut_raw(
+                (&mut self.shader_program.vertices).as_mut_ptr() as *mut f32,
+                self.shader_program.vertices.len() * 6,
+            );
+
             context.buffer_data_with_array_buffer_view(
                 WebGl2RenderingContext::ARRAY_BUFFER,
-                &position_view,
+                &data_view,
                 WebGl2RenderingContext::STATIC_DRAW,
             );
         }
@@ -170,10 +173,10 @@ fn place_cylinder_circle(top: bool) -> Vec<ColorSpaceVertex> {
         let h = angle / (2. * PI) / pct;
         let next_h = next_angle / (2. * PI) / pct;
 
-        let x = -angle.cos()*1.5;
-        let z = angle.sin()*1.5;
-        let next_x = -next_angle.cos()*1.5;
-        let next_z = next_angle.sin()*1.5;
+        let x = -angle.cos() * 1.5;
+        let z = angle.sin() * 1.5;
+        let next_x = -next_angle.cos() * 1.5;
+        let next_z = next_angle.sin() * 1.5;
 
         out.push(ColorSpaceVertex { pos: [0., y, 0.], hsx: [next_h, 0., l] });
 
@@ -186,7 +189,6 @@ fn place_cylinder_circle(top: bool) -> Vec<ColorSpaceVertex> {
             pos: [x, y, z],
             hsx: [h, 1., l],
         });
-
     }
 
     out
@@ -207,10 +209,10 @@ fn place_cylinder_sides() -> Vec<ColorSpaceVertex> {
         let h = angle / (2. * PI) / pct;
         let next_h = next_angle / (2. * PI) / pct;
 
-        let x = -angle.cos()*1.5;
-        let z = angle.sin()*1.5;
-        let next_x = -next_angle.cos()*1.5;
-        let next_z = next_angle.sin()*1.5;
+        let x = -angle.cos() * 1.5;
+        let z = angle.sin() * 1.5;
+        let next_x = -next_angle.cos() * 1.5;
+        let next_z = next_angle.sin() * 1.5;
 
         // Cylinder side triangles
 

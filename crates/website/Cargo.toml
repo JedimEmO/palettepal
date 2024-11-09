@@ -30,9 +30,11 @@ dwind-macros.workspace = true
 futures-signals.workspace = true
 futures-signals-component-macro = "0.3.0"
 glam.workspace = true
+hsv = "0.1.1"
 js-sys.workspace = true
 wasm-bindgen.workspace = true
 wasm-bindgen-futures.workspace = true
 wasm-log.workspace = true
 web-sys.workspace = true
 log.workspace = true
+serde = { version = "1.0.214", features = ["derive"] }

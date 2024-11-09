@@ -112,7 +112,7 @@ dependencies = [
 [[package]]
 name = "dominator-css-bindgen"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "case",
  "cssparser",
@@ -140,7 +140,7 @@ dependencies = [
 [[package]]
 name = "dwind"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "const_format",
  "dominator",
@@ -158,7 +158,7 @@ dependencies = [
 [[package]]
 name = "dwind-base"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "dominator",
  "futures-signals",
@@ -167,7 +167,7 @@ dependencies = [
 [[package]]
 name = "dwind-build"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "serde",
  "serde_json",
@@ -176,7 +176,7 @@ dependencies = [
 [[package]]
 name = "dwind-macros"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "dominator",
  "dwind-base",
@@ -189,7 +189,7 @@ dependencies = [
 [[package]]
 name = "dwui"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "const_format",
  "dominator",
@@ -332,6 +332,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hsv"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a03664f940932e7453c5f1dd0ce278a7af2ff47d440fad00f679b4f5bf0da869"
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -373,7 +379,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 [[package]]
 name = "modern-normalize-cssys"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=169a7f75599dc25ebe33d32509e61a329ff3a49a#169a7f75599dc25ebe33d32509e61a329ff3a49a"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=92999258f0569cb46f7eeccfdd780a22cae2f4cd#92999258f0569cb46f7eeccfdd780a22cae2f4cd"
 dependencies = [
  "dominator",
  "dominator-css-bindgen",
@@ -409,8 +415,10 @@ dependencies = [
  "futures-signals",
  "futures-signals-component-macro 0.3.0",
  "glam",
+ "hsv",
  "js-sys",
  "log",
+ "serde",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-log",
