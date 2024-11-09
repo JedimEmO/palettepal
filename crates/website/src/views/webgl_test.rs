@@ -2,13 +2,11 @@ use anyhow::anyhow;
 use dominator::Dom;
 use dwind::prelude::*;
 use dwui::prelude::*;
-use dwui::text_input;
-use dwui::components::input::validation::*;
+use dwui::{slider, text_input};
 use futures_signals::signal::{Mutable, SignalExt};
-use log::info;
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::spawn_local;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext, WebGlProgram, WebGlShader};
+use crate::views::geometry::ColorCake;
 use crate::views::main_view::PaletteColor;
 
 pub fn color_panel(color: &PaletteColor) -> Dom {
@@ -26,16 +24,44 @@ pub fn color_panel(color: &PaletteColor) -> Dom {
                     let mut draw = webgl_mount(canvas).unwrap();
 
                     b.future(hue.signal().for_each(move |hue| {
-                        info!("foobar {hue}");
                         draw(hue);
                         async move {}
                     }))
                 })
             })
         }))
+        .child(html!("canvas" => HtmlCanvasElement, {
+            .attr("width", "100px")
+            .attr("height", "100px")
+
+            .with_node!(canvas => {
+                .apply(|b| {
+                    let context =  canvas
+                        .get_context("webgl2")
+                        .map_err(|_| anyhow!("failed to get context")).expect_throw("failed to get context")
+                        .ok_or(anyhow!("failed to get context")).expect_throw("failed to get context")
+                        .dyn_into::<WebGl2RenderingContext>().map_err(|_| {
+                        anyhow!("failed to convert to webgl2 context")
+                    }).expect_throw("failed to get context");
+
+                    context.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
+                    context.enable(WebGl2RenderingContext::CULL_FACE);
+
+                    let mut cylinder = ColorCake::new(&context).expect_throw("failed to create cylinder");
+
+                    b.future(hue.signal().for_each(move |hue| {
+                        cylinder.draw(&context, hue).expect_throw("failed to draw cylinder");
+                        async move {}
+                    }))
+                })
+            })
+        }))
         .child(html!("div", {
-            .child(text_input!({
+            .child(slider!({
                 .label("hue".to_string())
+                .max(1.)
+                .min(0.)
+                .step(0.01)
                 .value(hue.clone())
             }))
         }))
@@ -125,7 +151,7 @@ fn webgl_mount(canvas: HtmlCanvasElement) -> anyhow::Result<impl FnMut(f32) -> (
     Ok(draw)
 }
 
-fn compile_shader(
+pub fn compile_shader(
     context: &WebGl2RenderingContext,
     shader_type: u32,
     source: &str,
@@ -152,7 +178,7 @@ fn compile_shader(
     }
 }
 
-fn link_program(context: &WebGl2RenderingContext, vert_shader: &WebGlShader, frag_shader: &WebGlShader) -> anyhow::Result<WebGlProgram> {
+pub fn link_program(context: &WebGl2RenderingContext, vert_shader: &WebGlShader, frag_shader: &WebGlShader) -> anyhow::Result<WebGlProgram> {
     let program = context.create_program().ok_or_else(|| anyhow!("failed to create program"))?;
 
     context.attach_shader(&program, vert_shader);
