@@ -16,16 +16,28 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
     html!("div", {
         .children([
             html!("div", {
-                .dwclass!("p-4 bg-woodsmoke-800 w-lg")
+                .dwclass!("p-4 bg-woodsmoke-800 w-md")
                 .dwclass!("flex flex-row gap-4")
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
                     .children([
-                        color_cake(hue.read_only(), color.samples_signal(shades_per_color.signal_cloned()), (1024,1024))
+                        color_cake(hue.read_only(), color.samples_signal(shades_per_color.signal_cloned()), (512,512)),
+                        html!("div", {
+                            .dwclass!("flex flex-row flex-wrap w-36")
+                            .children_signal_vec(shades_signal.to_signal_vec().map(|shade| {
+                                let color = format!("rgb({}, {}, {})", shade.0, shade.1, shade.2);
+
+                                html!("div", {
+                                    .dwclass!("w-5 h-5")
+                                    .style("background-color", color)
+                                })
+                            }))
+                        })
                     ])
+
                 }))
                 .child(html!("div", {
-                    .dwclass!("flex flex-col gap-2 w-52")
+                    .dwclass!("flex flex-col gap-1 w-52")
                     .children([
                         slider!({
                             .label("hue".to_string())
@@ -43,35 +55,35 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                             ])
                         })
                     ])
-                }))
-                .child_signal(color.sampler.signal_cloned().map(|sampler| {
-                    match sampler {
-                        ColorSampler::Sigmoid{amplification  } => {
+                    .child_signal(color.sampler.signal_cloned().map(|sampler| {
+                        match sampler {
+                            ColorSampler::Sigmoid{amplification  } => {
 
-                            Some(html!("div", {
-                                .dwclass!("flex flex-col gap-2 w-52")
-                                .children([
-                                    slider!({
-                                        .max(13.)
-                                        .min(-13.)
-                                        .step(0.1)
-                                        .label("Amplification".to_string())
-                                        .value(amplification.clone())
-                                    })
-                                ])
-                            }))
+                                Some(html!("div", {
+                                    .dwclass!("flex flex-col gap-2 w-52")
+                                    .children([
+                                        slider!({
+                                            .max(13.)
+                                            .min(-13.)
+                                            .step(0.1)
+                                            .label("Amplification".to_string())
+                                            .value(amplification.clone())
+                                        })
+                                    ])
+                                }))
 
+                            }
+                            ColorSampler::Diagonal => {
+                                None
+                            }
                         }
-                        ColorSampler::Diagonal => {
-                            None
-                        }
-                    }
+                    }))
                 }))
                 .child_signal(color.sampling_rect.signal_ref(|sampling_rect| {
                     Some(html!("div", {
                         .dwclass!("flex flex-row gap-4")
                         .child(html!("div", {
-                            .dwclass!("flex flex-col gap-2")
+                            .dwclass!("flex flex-col gap-1")
                             .children([
                                 slider!({
                                     .label("X".to_string())
@@ -86,12 +98,7 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                                     .min(-0.5)
                                     .max(1.5)
                                     .step(0.1)
-                                })
-                            ])
-                        }))
-                        .child(html!("div", {
-                            .dwclass!("flex flex-col gap-2")
-                            .children([
+                                }),
                                 slider!({
                                     .label("Width".to_string())
                                     .value(sampling_rect.width.clone())
@@ -118,21 +125,6 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                     }))
                 }))
             }),
-            html!("div", {
-                .dwclass!("p-4 bg-woodsmoke-800 w-lg")
-                .dwclass!("flex flex-row gap-4")
-                .child(html!("div", {
-                    .dwclass!("flex flex-row flex-wrap")
-                    .children_signal_vec(shades_signal.to_signal_vec().map(|shade| {
-                        let color = format!("rgb({}, {}, {})", shade.0, shade.1, shade.2);
-
-                        html!("div", {
-                            .dwclass!("w-5 h-5")
-                            .style("background-color", color)
-                        })
-                    }))
-                }))
-            })
         ])
     })
 }

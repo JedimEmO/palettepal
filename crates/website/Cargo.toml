@@ -25,13 +25,16 @@ crate-type = ["cdylib"]
 anyhow.workspace = true
 dominator.workspace = true
 dwind.workspace = true
+dwind-build.workspace = true
 dwui.workspace = true
 dwind-macros.workspace = true
 futures-signals.workspace = true
 futures-signals-component-macro = { version = "0.3.0", features = ["dominator"] }
 glam.workspace = true
+hex_color = "3.0.0"
 hsv = "0.1.1"
 js-sys.workspace = true
+serde_json.workspace = true
 wasm-bindgen.workspace = true
 wasm-bindgen-futures.workspace = true
 wasm-log.workspace = true

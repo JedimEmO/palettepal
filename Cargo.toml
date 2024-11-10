@@ -7,15 +7,18 @@ members = ["crates/website"]
 [workspace.dependencies]
 anyhow = "1.0.86"
 dominator = "0.5.36"
-dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "f972f91f30c070310ba0c7a6711855d5ae63ba39" }
-dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "f972f91f30c070310ba0c7a6711855d5ae63ba39" }
-dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "f972f91f30c070310ba0c7a6711855d5ae63ba39" }
-dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "f972f91f30c070310ba0c7a6711855d5ae63ba39" }
+dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
+dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
+dwind-build = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
+dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
+dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
 futures = "0.3.30"
 futures-signals = "0.3.34"
 glam = { version = "0.29.2" }
 js-sys = "0.3.70"
 log = "0.4.22"
+serde = "1.0.214"
+serde_json = "1.0.132"
 web-sys = { version = "0.3.70", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Storage", "Clipboard", "WebGl2RenderingContext", "WebGlShader", "WebGlProgram", "WebGlBuffer", "WebGlVertexArrayObject", "WebGlUniformLocation"] }
 wasm-bindgen = "0.2.95"
 wasm-bindgen-futures = "0.4.43"

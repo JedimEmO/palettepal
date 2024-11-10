@@ -21,6 +21,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
 
 [[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
+
+[[package]]
 name = "case"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -112,7 +118,7 @@ dependencies = [
 [[package]]
 name = "dominator-css-bindgen"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "case",
  "cssparser",
@@ -140,7 +146,7 @@ dependencies = [
 [[package]]
 name = "dwind"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "const_format",
  "dominator",
@@ -158,7 +164,7 @@ dependencies = [
 [[package]]
 name = "dwind-base"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "dominator",
  "futures-signals",
@@ -167,7 +173,7 @@ dependencies = [
 [[package]]
 name = "dwind-build"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "serde",
  "serde_json",
@@ -176,7 +182,7 @@ dependencies = [
 [[package]]
 name = "dwind-macros"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "dominator",
  "dwind-base",
@@ -189,7 +195,7 @@ dependencies = [
 [[package]]
 name = "dwui"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "const_format",
  "dominator",
@@ -333,6 +339,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex_color"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d37f101bf4c633f7ca2e4b5e136050314503dd198e78e325ea602c327c484ef0"
+dependencies = [
+ "rand",
+]
+
+[[package]]
 name = "hsv"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -380,7 +395,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 [[package]]
 name = "modern-normalize-cssys"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=f972f91f30c070310ba0c7a6711855d5ae63ba39#f972f91f30c070310ba0c7a6711855d5ae63ba39"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
 dependencies = [
  "dominator",
  "dominator-css-bindgen",
@@ -411,15 +426,18 @@ dependencies = [
  "anyhow",
  "dominator",
  "dwind",
+ "dwind-build",
  "dwind-macros",
  "dwui",
  "futures-signals",
  "futures-signals-component-macro 0.3.0",
  "glam",
+ "hex_color",
  "hsv",
  "js-sys",
  "log",
  "serde",
+ "serde_json",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-log",
@@ -501,6 +519,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
+name = "ppv-lite86"
+version = "0.2.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77957b295656769bb8ad2b6a6b09d897d94f05c41b069aede1fcdaa675eaea04"
+dependencies = [
+ "zerocopy",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -524,6 +551,18 @@ version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
+ "libc",
+ "rand_chacha",
+ "rand_core",
+]
+
+[[package]]
+name = "rand_chacha"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
+dependencies = [
+ "ppv-lite86",
  "rand_core",
 ]
 
@@ -532,6 +571,9 @@ name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "ryu"
@@ -742,4 +784,25 @@ checksum = "f6488b90108c040df0fe62fa815cbdee25124641df01814dd7282749234c6112"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "zerocopy"
+version = "0.7.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b9b4fd18abc82b8136838da5d50bae7bdea537c574d8dc1a34ed098d6c166f0"
+dependencies = [
+ "byteorder",
+ "zerocopy-derive",
+]
+
+[[package]]
+name = "zerocopy-derive"
+version = "0.7.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]

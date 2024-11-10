@@ -4,6 +4,9 @@ extern crate dominator;
 #[macro_use]
 extern crate dwind_macros;
 
+#[macro_use]
+extern crate dwui;
+
 pub mod model;
 pub mod views;
 pub mod widgets;
