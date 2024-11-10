@@ -49,6 +49,7 @@ jobs:
           # Rust toolchain name.
           toolchain: 1.81.0
           target: wasm32-unknown-unknown
+          default: 'true'
       - uses: jetli/trunk-action@v0.5.0
         with:
           # Optional version of trunk to install(eg. 'v0.19.1', 'latest')
