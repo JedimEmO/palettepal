@@ -1,10 +1,10 @@
 use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
 use crate::widgets::shader_canvas::*;
 use anyhow::anyhow;
-use dominator::Dom;
+use dominator::{events, Dom};
 use dwind::prelude::*;
 use futures_signals::map_ref;
-use futures_signals::signal::{ReadOnlyMutable, Signal, SignalExt};
+use futures_signals::signal::{Mutable, ReadOnlyMutable, Signal, SignalExt};
 use glam::Vec3;
 use log::{error, info};
 use std::f32::consts::PI;
@@ -12,8 +12,8 @@ use wasm_bindgen::UnwrapThrowExt;
 use web_sys::WebGl2RenderingContext;
 
 pub fn color_cake(
-    hue: ReadOnlyMutable<f32>,
-    sample_points: impl Signal<Item = Vec<(f32, f32)>> + 'static,
+    hue: Mutable<f32>,
+    sample_points: impl Signal<Item=Vec<(f32, f32)>> + 'static,
     size: (i32, i32),
 ) -> Dom {
     shader_canvas!({
@@ -27,6 +27,28 @@ pub fn color_cake(
             context.enable(WebGl2RenderingContext::CULL_FACE);
 
             let mut color_cake = ColorCake::new(&context).unwrap_throw();
+
+            let b = b.event(clone!(context, hue => move  |event: events::Click| {
+                info!("click event");
+                info!("offset: {}, {}", event.offset_x(), event.offset_y());
+                let x = (event.offset_x() - 64) as f32 / 128.;
+                let y = -(event.offset_y() - 64) as f32/ 128.;
+
+                info!("click: {}, {}", x, y);
+
+                // Skip the cutout of the cake
+                if x > 0. && y < 0. {
+                    return;
+                }
+
+                let angle = y.atan2(x);
+
+                // convert the clicked angle into 3/4 angle space
+                let angle = angle * 5. / 4.;
+                let angle = hue.get() + angle.to_degrees();
+
+                hue.set(angle.rem_euclid(360.).floor());
+            }));
 
             b.future(async move {
                 let draw_data_signal = map_ref! {

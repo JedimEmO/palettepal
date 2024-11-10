@@ -29,6 +29,7 @@ async fn main() {
         &DWIND_COLORS["red"],
     )));
     stylesheet!(["body"], {
+        .style("overflow-y", "scroll")
         .style("background-color", &dwind::colors::DWIND_COLORS["woodsmoke"][&900])
     });
 

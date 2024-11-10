@@ -4,7 +4,7 @@ use dwind::prelude::*;
 use futures_signals::map_ref;
 use futures_signals::signal::SignalExt;
 use futures_signals_component_macro::component;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use web_sys::{HtmlCanvasElement, HtmlElement, WebGl2RenderingContext};
 
 #[component(render_fn = shader_canvas_render)]

@@ -13,8 +13,8 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
         .dwclass!("flex flex-col gap-2")
         .children([
             html!("div", {
-                .dwclass!("w-md bg-woodsmoke-800 p-4")
-                .dwclass!("flex flex-row gap-4")
+                .dwclass!("@>sm:w-md @<sm:w-sm bg-woodsmoke-800 p-4")
+                .dwclass!("flex @sm:flex-row @<sm:flex-col gap-4")
                 .children([
                     html!("div", {
                         .dwclass!("flex flex-col gap-1")
@@ -128,7 +128,7 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
                 ])
             }),
             html!("div", {
-                .dwclass!("w-md bg-woodsmoke-800 p-4 overflow-scroll")
+                .dwclass!("bg-woodsmoke-800 p-4 overflow-scroll")
                 .child_signal(export_file_content.signal_cloned().map(|content| {
                     content.map(|content| {
                         html!("div", {

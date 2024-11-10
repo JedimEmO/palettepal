@@ -216,7 +216,7 @@ fn colors_u8(hue: f32, sample_coords: &Vec<(f32, f32)>) -> Vec<(u8, u8, u8)> {
     let mut out_colors = vec![];
 
     for shade in sample_coords {
-        let color = hsv_to_rgb(hue as f64, shade.0 as f64, shade.1 as f64);
+        let color = hsv_to_rgb((hue as f64).clamp(0., 360.), shade.0 as f64, shade.1 as f64);
         out_colors.push(color);
     }
 
@@ -269,7 +269,7 @@ pub struct Palette {
 
 impl Palette {
     pub fn add_new_color(&self) {
-        let new_color = PaletteColor::new((self.colors.lock_mut().len() as  f32 * 26.) % 360.);
+        let new_color = PaletteColor::new((self.colors.lock_mut().len() as  f32 * 26.).rem_euclid(360.));
         self.colors.lock_mut().push_cloned(new_color);
     }
 }

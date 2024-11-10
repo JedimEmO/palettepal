@@ -436,6 +436,7 @@ dependencies = [
  "hsv",
  "js-sys",
  "log",
+ "once_cell",
  "serde",
  "serde_json",
  "wasm-bindgen",
