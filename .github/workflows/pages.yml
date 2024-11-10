@@ -58,7 +58,7 @@ jobs:
         working-directory: crates/website
         run: trunk build --release
       - name: Populate docs
-        run: mkdir pages && cp -r crates/website/dist/* pages/
+        run: mkdir -p pages/website && cp -r crates/website/dist/* pages/website
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
