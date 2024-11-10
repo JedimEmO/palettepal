@@ -56,9 +56,9 @@ jobs:
           version: 'latest'
       - name: Install and Build 🔧
         working-directory: crates/website
-        run: trunk build --release
+        run: trunk build --release --public-url="/palettepal/
       - name: Populate docs
-        run: mkdir -p pages/website && cp -r crates/website/dist/* pages/website
+        run: mkdir -p pages && cp -r crates/website/dist/* pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
