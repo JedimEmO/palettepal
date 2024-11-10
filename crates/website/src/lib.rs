@@ -4,6 +4,7 @@ extern crate dominator;
 #[macro_use]
 extern crate dwind_macros;
 
+pub mod model;
 pub mod views;
 pub mod widgets;
 
@@ -19,9 +20,9 @@ async fn main() {
     dwind::stylesheet();
     wasm_log::init(wasm_log::Config::new(Level::Info));
     dwui::theme::apply_style_sheet(Some(ColorsCssVariables::new(
-        &DWIND_COLORS["apple"],
+        &DWIND_COLORS["picton-blue"],
         &DWIND_COLORS["woodsmoke"],
-        &DWIND_COLORS["woodsmoke"],
+        &DWIND_COLORS["bunker"],
         &DWIND_COLORS["red"],
     )));
     stylesheet!(["body"], {

@@ -267,6 +267,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d9df8f39b67d762e734521e9a3444ef6fd0c8700f91312571d17d9da84e9e99"
 dependencies = [
  "convert_case",
+ "dominator",
  "proc-macro2",
  "quote",
  "syn",

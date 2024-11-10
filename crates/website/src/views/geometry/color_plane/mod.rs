@@ -1,10 +1,10 @@
+use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
+use crate::widgets::shader_canvas::*;
 use anyhow::anyhow;
 use dominator::Dom;
 use futures_signals::signal::{ReadOnlyMutable, SignalExt};
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::WebGl2RenderingContext;
-use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
-use crate::widgets::shader_canvas::*;
 
 pub struct ColorQuad {
     shader_program: ShaderProgram,
@@ -14,18 +14,37 @@ impl ColorQuad {
     pub fn new(context: &WebGl2RenderingContext) -> anyhow::Result<Self> {
         let vertices = vec![
             // A
-            ColorSpaceVertex { pos: [1., 1., 0., ], hsx: [0., 1., 1.] },
-            ColorSpaceVertex { pos: [-1., 1., 0., ], hsx: [0., 0., 1.] },
-            ColorSpaceVertex { pos: [-1., -1., 0., ], hsx: [0., 0., 0.] },
+            ColorSpaceVertex {
+                pos: [1., 1., 0.],
+                hsx: [0., 1., 1.],
+            },
+            ColorSpaceVertex {
+                pos: [-1., 1., 0.],
+                hsx: [0., 0., 1.],
+            },
+            ColorSpaceVertex {
+                pos: [-1., -1., 0.],
+                hsx: [0., 0., 0.],
+            },
             // B
-            ColorSpaceVertex { pos: [1., 1., 0., ], hsx: [0., 1., 1.] },
-            ColorSpaceVertex { pos: [-1., -1., 0., ], hsx: [0., 0., 0.] },
-            ColorSpaceVertex { pos: [1., -1., 0., ], hsx: [0., 1., 0.] },
+            ColorSpaceVertex {
+                pos: [1., 1., 0.],
+                hsx: [0., 1., 1.],
+            },
+            ColorSpaceVertex {
+                pos: [-1., -1., 0.],
+                hsx: [0., 0., 0.],
+            },
+            ColorSpaceVertex {
+                pos: [1., -1., 0.],
+                hsx: [0., 1., 0.],
+            },
         ];
 
-        let geometries = vec![
-            GeometryIndex::Triangles { start_index: 0, count: vertices.len() }
-        ];
+        let geometries = vec![GeometryIndex::Triangles {
+            start_index: 0,
+            count: vertices.len(),
+        }];
 
         let shader_program = ShaderProgram::new(
             context,
@@ -35,12 +54,15 @@ impl ColorQuad {
             geometries,
         )?;
 
-        Ok(Self {
-            shader_program,
-        })
+        Ok(Self { shader_program })
     }
 
-    pub fn draw(&mut self, context: &WebGl2RenderingContext, hue: f32, resolution: (f32, f32)) -> anyhow::Result<()> {
+    pub fn draw(
+        &mut self,
+        context: &WebGl2RenderingContext,
+        hue: f32,
+        resolution: (f32, f32),
+    ) -> anyhow::Result<()> {
         let program = &self.shader_program.program;
         context.use_program(Some(&program));
 
@@ -48,14 +70,24 @@ impl ColorQuad {
         let color_location = context.get_attrib_location(&program, "a_color");
         let resolution_location = context.get_uniform_location(&program, "u_resolution");
         let hue_location = context.get_uniform_location(&program, "u_hue");
-        let buffer = context.create_buffer().ok_or(anyhow!("failed to create buffer"))?;
+        let buffer = context
+            .create_buffer()
+            .ok_or(anyhow!("failed to create buffer"))?;
 
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
 
-        WebGl2RenderingContext::uniform2f(&context, resolution_location.as_ref(), resolution.0, resolution.1);
+        WebGl2RenderingContext::uniform2f(
+            &context,
+            resolution_location.as_ref(),
+            resolution.0,
+            resolution.1,
+        );
 
         unsafe {
-            let position_view = js_sys::Float32Array::view_mut_raw((&mut self.shader_program.vertices).as_mut_ptr() as *mut f32, self.shader_program.vertices.len() * size_of::<ColorSpaceVertex>());
+            let position_view = js_sys::Float32Array::view_mut_raw(
+                (&mut self.shader_program.vertices).as_mut_ptr() as *mut f32,
+                self.shader_program.vertices.len() * size_of::<ColorSpaceVertex>(),
+            );
             context.buffer_data_with_array_buffer_view(
                 WebGl2RenderingContext::ARRAY_BUFFER,
                 &position_view,
@@ -63,7 +95,8 @@ impl ColorQuad {
             );
         }
 
-        let vertex_array_object = context.create_vertex_array()
+        let vertex_array_object = context
+            .create_vertex_array()
             .ok_or(anyhow!("failed to create vertex array object"))?;
 
         context.bind_vertex_array(Some(&vertex_array_object));

@@ -28,15 +28,24 @@ pub fn compile_shader(
     }
 }
 
-pub fn link_program(context: &WebGl2RenderingContext, vert_shader: &WebGlShader, frag_shader: &WebGlShader) -> anyhow::Result<WebGlProgram> {
-    let program = context.create_program().ok_or_else(|| anyhow!("failed to create program"))?;
+pub fn link_program(
+    context: &WebGl2RenderingContext,
+    vert_shader: &WebGlShader,
+    frag_shader: &WebGlShader,
+) -> anyhow::Result<WebGlProgram> {
+    let program = context
+        .create_program()
+        .ok_or_else(|| anyhow!("failed to create program"))?;
 
     context.attach_shader(&program, vert_shader);
     context.attach_shader(&program, frag_shader);
     context.link_program(&program);
 
-    if context.get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS)
-        .as_bool().unwrap_or(false) {
+    if context
+        .get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS)
+        .as_bool()
+        .unwrap_or(false)
+    {
         Ok(program)
     } else {
         Err(anyhow!("failed to link program"))
