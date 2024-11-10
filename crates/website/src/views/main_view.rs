@@ -17,14 +17,14 @@ pub fn main_view() -> Dom {
     };
 
     html!("div", {
-        .dwclass!("w-screen h-screen flex align-items-center justify-center")
+        .dwclass!("flex justify-center")
         .child(palette_view(palette))
     })
 }
 
 pub fn palette_view(palette: Palette) -> Dom {
     html!("div", {
-        .dwclass!("flex flex-col gap-4 justify-center")
+        .dwclass!("flex flex-col gap-4 justify-center m-t-8")
         .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
             color_panel(color, palette.shades_per_color.read_only())
         })))
