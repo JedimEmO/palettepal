@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use crate::model::palette::{ColorSampler, ColorShades, PaletteColor};
 use crate::views::geometry::color_cake;
 use dominator::Dom;
@@ -15,7 +16,7 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
     html!("div", {
         .children([
             html!("div", {
-                .dwclass!("p-4 bg-woodsmoke-800 w-md")
+                .dwclass!("p-4 bg-woodsmoke-800 w-lg")
                 .dwclass!("flex flex-row gap-4")
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
@@ -52,7 +53,7 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                                 .children([
                                     slider!({
                                         .max(13.)
-                                        .min(0.)
+                                        .min(-13.)
                                         .step(0.1)
                                         .label("Amplification".to_string())
                                         .value(amplification.clone())
@@ -66,9 +67,59 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                         }
                     }
                 }))
+                .child_signal(color.sampling_rect.signal_ref(|sampling_rect| {
+                    Some(html!("div", {
+                        .dwclass!("flex flex-row gap-4")
+                        .child(html!("div", {
+                            .dwclass!("flex flex-col gap-2")
+                            .children([
+                                slider!({
+                                    .label("X".to_string())
+                                    .value(sampling_rect.x.clone())
+                                    .min(-0.5)
+                                    .max(1.5)
+                                    .step(0.1)
+                                }),
+                                slider!({
+                                    .label("Y".to_string())
+                                    .value(sampling_rect.y.clone())
+                                    .min(-0.5)
+                                    .max(1.5)
+                                    .step(0.1)
+                                })
+                            ])
+                        }))
+                        .child(html!("div", {
+                            .dwclass!("flex flex-col gap-2")
+                            .children([
+                                slider!({
+                                    .label("Width".to_string())
+                                    .value(sampling_rect.width.clone())
+                                    .min(-0.5)
+                                    .max(1.5)
+                                    .step(0.1)
+                                }),
+                                slider!({
+                                    .label("Height".to_string())
+                                    .value(sampling_rect.height.clone())
+                                    .min(-0.5)
+                                    .max(1.5)
+                                    .step(0.1)
+                                }),
+                                slider!({
+                                    .label("Rotation".to_string())
+                                    .value(sampling_rect.rotation.clone())
+                                    .min(0.)
+                                    .max(2. * PI)
+                                    .step(0.1)
+                                }),
+                            ])
+                        }))
+                    }))
+                }))
             }),
             html!("div", {
-                .dwclass!("p-4 bg-woodsmoke-800 w-md")
+                .dwclass!("p-4 bg-woodsmoke-800 w-lg")
                 .dwclass!("flex flex-row gap-4")
                 .child(html!("div", {
                     .dwclass!("flex flex-row flex-wrap")
