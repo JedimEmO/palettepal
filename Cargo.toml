@@ -19,7 +19,7 @@ js-sys = "0.3.70"
 log = "0.4.22"
 serde = "1.0.214"
 serde_json = "1.0.132"
-web-sys = { version = "0.3.70", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Storage", "Clipboard", "WebGl2RenderingContext", "WebGlShader", "WebGlProgram", "WebGlBuffer", "WebGlVertexArrayObject", "WebGlUniformLocation"] }
+web-sys = { version = "0.3.70", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Storage", "Clipboard", "File", "HtmlAnchorElement", "WebGl2RenderingContext", "WebGlShader", "WebGlProgram", "WebGlBuffer", "WebGlVertexArrayObject", "WebGlUniformLocation", "ImageData"] }
 wasm-bindgen = { version = "0.2.95" }
 wasm-bindgen-futures = "0.4.43"
 wasm-log = "0.3.1"

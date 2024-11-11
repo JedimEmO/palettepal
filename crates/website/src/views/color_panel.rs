@@ -8,6 +8,7 @@ use dwui::{select, slider};
 use futures_signals::signal::{Mutable, ReadOnlyMutable, SignalExt};
 use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
+use crate::mixins::panel::panel_mixin;
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
@@ -16,7 +17,8 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
 
     let shades_signal = color.colors_u8_signal(shades_per_color.signal_cloned());
     html!("div", {
-        .dwclass!("p-4 bg-woodsmoke-800 @>sm:w-md @<sm:w-sm")
+        .apply(panel_mixin)
+        .dwclass!("p-4 @>sm:w-md @<sm:w-sm rounded")
         .dwclass!("flex @sm:flex-row @<sm:flex-col @sm:align-items-start @<sm:align-items-center gap-4")
         .child(html!("div", {
             .dwclass!("flex flex-col gap-2")

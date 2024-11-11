@@ -1,20 +1,26 @@
+use std::iter::once;
 use dominator::{Dom};
 use crate::model::palette::{Palette};
 use dwind::prelude::*;
 use dwui::prelude::*;
 use futures_signals::signal::Mutable;
-use web_sys::window;
+use web_sys::{window, CanvasRenderingContext2d, HtmlAnchorElement, HtmlCanvasElement, Url};
 use futures_signals::signal::SignalExt;
+use log::info;
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use crate::mixins::panel::panel_mixin;
 use crate::model::sampling::get_equidistant_points_in_range;
 
 pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
     let mut export_file_content: Mutable<Option<String>> = Mutable::new(None);
+    let mut export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>> = Mutable::new(None);
 
     html!("div", {
+        .apply(panel_mixin)
         .dwclass!("flex flex-col gap-2")
         .children([
             html!("div", {
-                .dwclass!("@>sm:w-md @<sm:w-sm bg-woodsmoke-800 p-4")
+                .dwclass!("@>sm:w-md @<sm:w-sm p-4")
                 .dwclass!("flex @sm:flex-row @<sm:flex-col gap-4")
                 .children([
                     html!("div", {
@@ -59,6 +65,53 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
                                 })))
                                 .on_click(clone!(palette => move |_| {
                                     window().unwrap().alert_with_message("TODO").unwrap()
+                                }))
+                            }),
+                            button!({
+                                .content(Some(html!("div", {
+                                    .dwclass!("p-l-2 p-r-2")
+                                    .text("Export to PNG")
+                                })))
+                                .on_click(clone!(palette, export_image_content => move |_| {
+                                    let samples = palette.lock_mut().shades_per_color.get_cloned();
+                                    let sampling_coords = get_equidistant_points_in_range(0., 1., 11);
+                                    let mut colors = vec![];
+
+                                    for color in palette.lock_mut().colors.lock_mut().iter() {
+                                        let curve = color.samples(samples.clone());
+                                        colors.push(color.colors_u8(&curve));
+                                    }
+
+                                    export_image_content.set(Some(colors));
+                                }))
+                            }),
+                            button!({
+                                .content(Some(html!("div", {
+                                    .dwclass!("p-l-2 p-r-2")
+                                    .text("Export to PAL(JASC)")
+                                })))
+                                .on_click(clone!(palette, export_file_content => move |_| {
+                                    let jasc_palette = palette.lock_mut().to_jasc_pal();
+
+                                    let string = JsValue::from_str(jasc_palette.as_str());
+
+                                    let sequence = js_sys::Array::from_iter(once(string));
+                                    let blob = web_sys::Blob::new_with_str_sequence(&sequence).unwrap_throw();
+
+                                    let file_url = Url::create_object_url_with_blob(&blob).unwrap_throw();
+                                    let mut dl_link = window().unwrap().document().unwrap().create_element("a").unwrap_throw().dyn_into::<HtmlAnchorElement>().unwrap_throw();
+
+                                    dl_link.set_attribute("href", &file_url).unwrap_throw();
+                                    dl_link.set_attribute("download", "palette.pal").unwrap_throw();
+
+                                    window().unwrap().document().unwrap().body().unwrap_throw().append_child(&dl_link).unwrap_throw();
+
+                                    dl_link.click();
+
+                                    window().unwrap().document().unwrap().body().unwrap_throw().remove_child(&dl_link).unwrap_throw();
+                                    Url::revoke_object_url(&file_url).unwrap_throw();
+
+                                    export_file_content.set(Some(jasc_palette));
                                 }))
                             })
                         ])
@@ -132,11 +185,46 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
         ])
         .child_signal(export_file_content.signal_cloned().map(|content| {
             content.map(|content| {html!("div", {
-                .dwclass!("bg-woodsmoke-800 p-4 overflow-scroll @>sm:w-md @<sm:w-sm")
-                .child(html!("div", {
+                .apply(panel_mixin)
+                .dwclass!("p-4 overflow-auto @>sm:w-md @<sm:w-sm max-h-64")
+                .child(html!("pre", {
                     .text(&content)
                 }))
             })})
+        }))
+        .child_signal(export_image_content.signal_cloned().map(|content| {
+            content.map(|content| {
+                if content.len() == 0 || content[0].len() == 0 {
+                    return html!("div", {})
+                }
+
+                let width = content[0].len();
+                let height = content.len();
+
+                html!("div", {
+                    .apply(panel_mixin)
+                    .dwclass!("p-4 @>sm:w-md @<sm:w-sm ")
+                    .child(html!("canvas" => HtmlCanvasElement, {
+                        .dwclass!("w-full h-12")
+                        .style("image-rendering", "pixelated")
+                        .attr("width", &(width * height).to_string())
+                        .attr("height", "1")
+                        .after_inserted(move |node| {
+                            let context = node.get_context("2d").unwrap().unwrap().dyn_into::<CanvasRenderingContext2d>().unwrap();
+                            let mut x = 0;
+
+                            for shade in content {
+                                for (r, g, b) in shade {
+                                    context.set_fill_style_str(&format!("rgb({r} {g} {b})"));
+                                    context.fill_rect(x as f64, 0., 1., 1.);
+
+                                    x += 1;
+                                }
+                            }
+                        })
+                    }))
+                })
+            })
         }))
     })
 }

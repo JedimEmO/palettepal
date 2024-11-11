@@ -84,7 +84,7 @@ impl FromStr for ColorSampler {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Sigmoid" => Ok(Self::Sigmoid { amplification: Mutable::new(1.) }),
+            "Sigmoid" => Ok(Self::Sigmoid { amplification: Mutable::new(4.) }),
             "Diagonal" => Ok(Self::Diagonal),
             "DwindCurve" => Ok(Self::DwindCurve),
             "DwindCurve2" => Ok(Self::DwindCurve2),
@@ -210,6 +210,35 @@ impl PaletteColor {
                 }
             }
         }.flatten()
+    }
+
+    pub fn samples(&self, shades_per_color: ColorShades) -> Vec<(f32, f32)> {
+        let sampling_rect = self.sampling_rect.get_cloned();
+        let sample_x_points = match shades_per_color {
+            ColorShades::Tailwind => {
+                get_equidistant_points_in_range(0., 1., 11)
+            }
+            ColorShades::Custom(coords) => { coords }
+        };
+
+        let matrices = sampling_rect.matrices();
+        let points = match self.sampler.get_cloned() {
+            ColorSampler::Sigmoid { amplification } => {
+                sigmoid_sample(&matrices, &amplification.get(), sample_x_points)
+            }
+            ColorSampler::Diagonal => {
+                let points = sample_x_points.into_iter().map(|v| (v, 1. - v)).collect::<Vec<_>>();
+                static_sample(&matrices, &points)
+            }
+            ColorSampler::DwindCurve => {
+                DWIND_CURVE.to_vec()
+            }
+            ColorSampler::DwindCurve2 => {
+                DWIND_CURVE2.to_vec()
+            }
+        };
+
+        points
     }
 
     pub fn colors_u8_signal(
@@ -352,5 +381,21 @@ impl Palette {
     pub fn add_new_color(&self) {
         let new_color = PaletteColor::new((self.colors.lock_mut().len() as f32 * 26.).rem_euclid(360.));
         self.colors.lock_mut().push_cloned(new_color);
+    }
+
+    pub fn to_jasc_pal(&self) -> String {
+        let mut palette = jascpal::Palette::new();
+        let shades = self.shades_per_color.get_cloned();
+
+        for color in self.colors.lock_mut().iter() {
+            let curve = color.samples(shades.clone());
+            let swatch = color.colors_u8(&curve);
+
+            for (r, g, b) in swatch {
+                palette.colors_mut().push(jascpal::Color::new(r, g, b));
+            }
+        }
+
+        palette.to_string()
     }
 }

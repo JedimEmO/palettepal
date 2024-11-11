@@ -10,6 +10,7 @@ extern crate dwui;
 pub mod model;
 pub mod views;
 pub mod widgets;
+pub mod mixins;
 
 use crate::views::main_view::{main_view, palette_view};
 use dominator::{append_dom, body, stylesheet};
