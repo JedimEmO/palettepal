@@ -7,11 +7,11 @@ members = ["crates/website"]
 [workspace.dependencies]
 anyhow = "1.0.86"
 dominator = "0.5.36"
-dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
-dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
-dwind-build = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
-dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
-dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "fbf5046b4d6f8943acef408156f215d84d279257" }
+dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
+dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
+dwind-build = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
+dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
+dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
 futures = "0.3.30"
 futures-signals = "0.3.34"
 glam = { version = "0.29.2" }

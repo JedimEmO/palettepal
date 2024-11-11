@@ -20,7 +20,8 @@ pub fn main_view() -> Dom {
     });
 
     html!("div", {
-        .dwclass!("flex justify-center")
+        .dwclass!("flex justify-center w-full h-screen align-items-start")
+        .dwclass!("linear-gradient-180 gradient-from-woodsmoke-800 gradient-to-woodsmoke-950")
         .child(palette_view(palette))
     })
 }

@@ -128,17 +128,15 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
                         ])
                     })
                 ])
-            }),
-            html!("div", {
-                .dwclass!("bg-woodsmoke-800 p-4 overflow-scroll @>sm:w-md @<sm:w-sm")
-                .child_signal(export_file_content.signal_cloned().map(|content| {
-                    content.map(|content| {
-                        html!("div", {
-                            .text(&content)
-                        })
-                    })
-                }))
             })
         ])
+        .child_signal(export_file_content.signal_cloned().map(|content| {
+            content.map(|content| {html!("div", {
+                .dwclass!("bg-woodsmoke-800 p-4 overflow-scroll @>sm:w-md @<sm:w-sm")
+                .child(html!("div", {
+                    .text(&content)
+                }))
+            })})
+        }))
     })
 }

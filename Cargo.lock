@@ -118,7 +118,7 @@ dependencies = [
 [[package]]
 name = "dominator-css-bindgen"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "case",
  "cssparser",
@@ -146,7 +146,7 @@ dependencies = [
 [[package]]
 name = "dwind"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "const_format",
  "dominator",
@@ -164,7 +164,7 @@ dependencies = [
 [[package]]
 name = "dwind-base"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "dominator",
  "futures-signals",
@@ -173,7 +173,7 @@ dependencies = [
 [[package]]
 name = "dwind-build"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "serde",
  "serde_json",
@@ -182,7 +182,7 @@ dependencies = [
 [[package]]
 name = "dwind-macros"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "dominator",
  "dwind-base",
@@ -195,7 +195,7 @@ dependencies = [
 [[package]]
 name = "dwui"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "const_format",
  "dominator",
@@ -395,7 +395,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 [[package]]
 name = "modern-normalize-cssys"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=fbf5046b4d6f8943acef408156f215d84d279257#fbf5046b4d6f8943acef408156f215d84d279257"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
 dependencies = [
  "dominator",
  "dominator-css-bindgen",
