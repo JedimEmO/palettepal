@@ -1,4 +1,4 @@
-use crate::model::palette::{ColorShades, Palette, PaletteColor};
+use crate::model::palette::{ColorSampler, ColorShades, Palette, PaletteColor};
 use crate::views::color_panel::color_panel;
 use dominator::Dom;
 use dwind::prelude::*;
@@ -10,6 +10,12 @@ pub fn main_view() -> Dom {
     let palette = Mutable::new(Palette {
         shades_per_color: Mutable::new(ColorShades::Tailwind),
         colors: MutableVec::new_with_values(vec![
+            PaletteColor {
+                name: "default-color".to_string().into(),
+                hue: Default::default(),
+                sampling_rect: Default::default(),
+                sampler: Mutable::new(ColorSampler::DwindCurve),
+            }
         ]),
     });
 

@@ -9,12 +9,57 @@ use std::str::FromStr;
 use dwind_build::colors::Color;
 use glam::{Mat3, Vec2};
 
+const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+
+const DWIND_CURVE: [(f32, f32); 11] = [
+    (0., 1.),
+    (0.2, 0.9),
+    (0.3, 0.8),
+    (0.4, 0.67),
+    (0.47, 0.57),
+    (0.55, 0.47),
+    (0.62, 0.4),
+    (0.7, 0.36),
+    (0.8, 0.3),
+    (0.9, 0.2),
+    (1., 0.),
+];
+
+/*
+0	1
+0,2	0,95
+0,3	0,92
+0,4	0,86
+0,47	0,8
+0,55	0,72
+0,62	0,63
+0,7	0,53
+0,8	0,4
+0,9	0,2
+1	0
+ */
+const DWIND_CURVE2: [(f32, f32); 11] = [
+    (0., 1.),
+    (0.2, 0.95),
+    (0.3, 0.92),
+    (0.4, 0.86),
+    (0.47, 0.8),
+    (0.55, 0.72),
+    (0.62, 0.63),
+    (0.7, 0.53),
+    (0.8, 0.4),
+    (0.9, 0.2),
+    (1., 0.),
+];
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ColorSampler {
     Sigmoid {
         amplification: Mutable<f32>,
     },
     Diagonal,
+    DwindCurve,
+    DwindCurve2,
 }
 
 impl Default for ColorSampler {
@@ -28,6 +73,8 @@ impl ToString for ColorSampler {
         match self {
             Self::Sigmoid { .. } => "Sigmoid".to_string(),
             Self::Diagonal => "Diagonal".to_string(),
+            Self::DwindCurve => "DwindCurve".to_string(),
+            Self::DwindCurve2 => "DwindCurve2".to_string(),
         }
     }
 }
@@ -39,6 +86,8 @@ impl FromStr for ColorSampler {
         match s {
             "Sigmoid" => Ok(Self::Sigmoid { amplification: Mutable::new(1.) }),
             "Diagonal" => Ok(Self::Diagonal),
+            "DwindCurve" => Ok(Self::DwindCurve),
+            "DwindCurve2" => Ok(Self::DwindCurve2),
             _ => Err(()),
         }
     }
@@ -135,28 +184,29 @@ impl PaletteColor {
         map_ref! {
             let sampler = self.sampler.signal_cloned(),
             let shades = shades_per_color => {
-                match shades {
+                let sample_x_points = match shades {
                     ColorShades::Tailwind => {
-                        match sampler {
-                            ColorSampler::Sigmoid {amplification } => {
-                                let matrices_signal = sampling_rect.signal_cloned().map(|m| m.matrices_signal()).flatten();
-
-                                sigmoid_sample_signal(amplification.clone(), matrices_signal).boxed()
-                            }
-                            ColorSampler::Diagonal => {
-                                let mut points = vec![];
-                                let x_coords = get_equidistant_points_in_range(0., 1., 11);
-
-                                for x in x_coords {
-                                    let y = 1. - x;
-                                    points.push((x, y));
-                                }
-
-                                always(points).boxed()
-                            }
-                        }
+                        get_equidistant_points_in_range(0., 1., 11)
                     }
-                    ColorShades::Custom(_) => { always(vec![]).boxed() }
+                    ColorShades::Custom(coords) => { coords.clone() }
+                };
+
+                let matrices_signal = sampling_rect.signal_cloned().map(|m| m.matrices_signal()).flatten();
+
+                match sampler {
+                    ColorSampler::Sigmoid {amplification } => {
+                        sigmoid_sample_signal(amplification.clone(), matrices_signal, always(sample_x_points.clone())).boxed()
+                    }
+                    ColorSampler::Diagonal => {
+                        let points = sample_x_points.into_iter().map(|v| (v, 1. - v)).collect::<Vec<_>>();
+                        static_sample_signal(matrices_signal, always(points)).boxed()
+                    }
+                    ColorSampler::DwindCurve => {
+                        static_sample_signal(matrices_signal, always(DWIND_CURVE.to_vec()).boxed()).boxed()
+                    }
+                    ColorSampler::DwindCurve2 => {
+                        static_sample_signal(matrices_signal, always(DWIND_CURVE2.to_vec()).boxed()).boxed()
+                    }
                 }
             }
         }.flatten()
@@ -182,19 +232,23 @@ impl PaletteColor {
     }
 }
 
-impl Into<dwind_build::colors::Color> for PaletteColor {
-    fn into(self) -> Color {
-        const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-
+impl PaletteColor {
+    pub fn into_dwind_color(self, x_sample_coords: Vec<f32>) -> Color {
         let colors = match self.sampler.get_cloned() {
             ColorSampler::Sigmoid { amplification } => {
                 let matrices = self.sampling_rect.get_cloned().matrices();
-                let points = sigmoid_sample(&matrices, &amplification.get());
+                let points = sigmoid_sample(&matrices, &amplification.get(), x_sample_coords);
 
                 self.colors_u8(&points)
             }
             ColorSampler::Diagonal => {
                 vec![]
+            }
+            ColorSampler::DwindCurve => {
+                self.colors_u8(&DWIND_CURVE.to_vec())
+            }
+            ColorSampler::DwindCurve2 => {
+                self.colors_u8(&DWIND_CURVE2.to_vec())
             }
         }.into_iter().enumerate().map(|(idx, (r, g, b))| {
             (TAILWIND_NUMBERS[idx], format!("{}", hex_color::HexColor::rgb(r, g, b).display_rgba()))
@@ -223,25 +277,52 @@ fn colors_u8(hue: f32, sample_coords: &Vec<(f32, f32)>) -> Vec<(u8, u8, u8)> {
     out_colors
 }
 
-fn sigmoid_sample_signal(amplification: Mutable<f32>, sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
+fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, points_signal: impl Signal<Item=Vec<(f32, f32)>> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
     map_ref! {
-        let sampling_rect_matrices = sampling_rect_matrices_signal,
-        let amplification = amplification.signal() => {
-            sigmoid_sample(sampling_rect_matrices, amplification)
+        let points = points_signal,
+        let sampling_rect_matrices = sampling_rect_matrices_signal => {
+            static_sample(sampling_rect_matrices, points)
         }
     }
 }
 
-fn sigmoid_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), amplification: &f32) -> Vec<(f32, f32)> {
+fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec<(f32, f32)>) -> Vec<(f32, f32)> {
     let mut points = vec![];
-    let x_coords = get_equidistant_points_in_range(0., 1., 11);
+
+    for (x, y) in input_points {
+        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.) as f32);
+        let trans_to_center = Mat3::from_translation(glam::Vec2::new(0.5, 0.5));
+        let trans_back = Mat3::from_translation(glam::Vec2::new(-0.5, -0.5));
+        let mat = trans_to_center * sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2 * trans_back;
+        let point = mat.transform_point2(point);
+
+        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.) as f32));
+    }
+
+    points
+}
+
+fn sigmoid_sample_signal(amplification: Mutable<f32>, sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, sampling_x_coords_signal: impl Signal<Item=Vec<f32>> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
+    map_ref! {
+        let sampling_rect_matrices = sampling_rect_matrices_signal,
+        let amplification = amplification.signal(),
+        let x_coords = sampling_x_coords_signal => {
+            sigmoid_sample(sampling_rect_matrices, amplification, x_coords.clone())
+        }
+    }
+}
+
+fn sigmoid_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), amplification: &f32, x_coords: Vec<f32>) -> Vec<(f32, f32)> {
+    let mut points = vec![];
 
     for x in x_coords {
         let x_samp = (x - 0.5) * amplification;
-        let y = 0.5 - algebraic_simple(x_samp as f64)*1./2.;
+        let y = 0.5 - algebraic_simple(x_samp as f64) * 1. / 2.;
 
         let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.) as f32);
-        let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
+        let trans_to_center = Mat3::from_translation(glam::Vec2::new(0.5, 0.5));
+        let trans_back = Mat3::from_translation(glam::Vec2::new(-0.5, -0.5));
+        let mat = trans_to_center * sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2 * trans_back;
         let point = mat.transform_point2(point);
 
         points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.) as f32));
@@ -258,7 +339,7 @@ fn sigmoid_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), amplification: &f
 pub enum ColorShades {
     #[default]
     Tailwind,
-    Custom(u8),
+    Custom(Vec<f32>),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -269,7 +350,7 @@ pub struct Palette {
 
 impl Palette {
     pub fn add_new_color(&self) {
-        let new_color = PaletteColor::new((self.colors.lock_mut().len() as  f32 * 26.).rem_euclid(360.));
+        let new_color = PaletteColor::new((self.colors.lock_mut().len() as f32 * 26.).rem_euclid(360.));
         self.colors.lock_mut().push_cloned(new_color);
     }
 }

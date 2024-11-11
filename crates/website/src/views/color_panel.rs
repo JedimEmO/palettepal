@@ -39,6 +39,10 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
         .child(html!("div", {
             .dwclass!("flex flex-col gap-1")
             .children([
+                text_input!({
+                    .label("Color name".to_string())
+                    .value(color.name.clone())
+                }),
                 slider!({
                     .label("hue".to_string())
                     .max(360.)
@@ -51,7 +55,9 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                     .value(color.sampler.clone())
                     .options(vec![
                         ("Sigmoid".to_string(), "Sigmoid".to_string()),
-                        ("Diagonal".to_string(), "Diagonal".to_string())
+                        ("Diagonal".to_string(), "Diagonal".to_string()),
+                        ("DwindCurve".to_string(), "DWIND Curve".to_string()),
+                        ("DwindCurve2".to_string(), "DWIND Curve 2".to_string()),
                     ])
                 })
             ])
@@ -73,7 +79,7 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                         }))
 
                     }
-                    ColorSampler::Diagonal => {
+                    _ => {
                         None
                     }
                 }

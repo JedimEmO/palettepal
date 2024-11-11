@@ -5,6 +5,7 @@ use dwui::prelude::*;
 use futures_signals::signal::Mutable;
 use web_sys::window;
 use futures_signals::signal::SignalExt;
+use crate::model::sampling::get_equidistant_points_in_range;
 
 pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
     let mut export_file_content: Mutable<Option<String>> = Mutable::new(None);
@@ -39,10 +40,11 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
                                     .text("Export to DWIND color file")
                                 })))
                                 .on_click(clone!(palette, export_file_content => move |_| {
+                                    let sampling_coords = get_equidistant_points_in_range(0., 1., 11);
                                     let mut color_file = dwind_build::colors::ColorFile {colors: vec![]};
 
                                     for color in palette.lock_mut().colors.lock_mut().iter() {
-                                        color_file.colors.push(color.clone().into())
+                                        color_file.colors.push(color.clone().into_dwind_color(sampling_coords.clone()))
                                     }
 
                                     let color_file_string = serde_json::to_string_pretty(&color_file).unwrap();
@@ -128,7 +130,7 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
                 ])
             }),
             html!("div", {
-                .dwclass!("bg-woodsmoke-800 p-4 overflow-scroll")
+                .dwclass!("bg-woodsmoke-800 p-4 overflow-scroll @>sm:w-md @<sm:w-sm")
                 .child_signal(export_file_content.signal_cloned().map(|content| {
                     content.map(|content| {
                         html!("div", {
