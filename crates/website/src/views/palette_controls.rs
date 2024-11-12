@@ -124,7 +124,7 @@ fn save_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<Stri
         .apply(panel_mixin)
         .child(html!("div", {
             .dwclass!("font-bold text-lg text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-12 text-center")
-            .text("Save")
+            .text("File")
             .event(clone!(expanded => move |_: events::Click| {
                 expanded.set(!expanded.get());
             }))
@@ -202,10 +202,7 @@ fn save_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<Stri
     })
 }
 
-pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
-    let mut export_file_content: Mutable<Option<String>> = Mutable::new(None);
-    let mut export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>> = Mutable::new(None);
-
+pub fn palette_controls(palette: Mutable<Palette>, export_file_content: Mutable<Option<String>>, export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>>) -> Dom {
     html!("div", {
         .dwclass!("flex flex-col gap-2 pointer-events-auto align-items-center")
         .children([
@@ -231,48 +228,5 @@ pub fn palette_controls(palette: Mutable<Palette>) -> Dom {
                 ])
             })
         ])
-        .child_signal(export_file_content.signal_cloned().map(|content| {
-            content.map(|content| {html!("div", {
-                .apply(panel_mixin)
-                .dwclass!("p-4 overflow-auto @>sm:w-md @<sm:w-sm max-h-64")
-                .child(html!("pre", {
-                    .text(&content)
-                }))
-            })})
-        }))
-        .child_signal(export_image_content.signal_cloned().map(|content| {
-            content.map(|content| {
-                if content.len() == 0 || content[0].len() == 0 {
-                    return html!("div", {})
-                }
-
-                let width = content[0].len();
-                let height = content.len();
-
-                html!("div", {
-                    .apply(panel_mixin)
-                    .dwclass!("p-4 @>sm:w-md @<sm:w-sm ")
-                    .child(html!("canvas" => HtmlCanvasElement, {
-                        .dwclass!("w-full h-12")
-                        .style("image-rendering", "pixelated")
-                        .attr("width", &(width * height).to_string())
-                        .attr("height", "1")
-                        .after_inserted(move |node| {
-                            let context = node.get_context("2d").unwrap().unwrap().dyn_into::<CanvasRenderingContext2d>().unwrap();
-                            let mut x = 0;
-
-                            for shade in content {
-                                for (r, g, b) in shade {
-                                    context.set_fill_style_str(&format!("rgb({r} {g} {b})"));
-                                    context.fill_rect(x as f64, 0., 1., 1.);
-
-                                    x += 1;
-                                }
-                            }
-                        })
-                    }))
-                })
-            })
-        }))
     })
 }
