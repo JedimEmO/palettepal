@@ -231,10 +231,10 @@ impl PaletteColor {
                 static_sample(&matrices, &points)
             }
             ColorSampler::DwindCurve => {
-                DWIND_CURVE.to_vec()
+                static_sample(&matrices, &DWIND_CURVE.to_vec())
             }
             ColorSampler::DwindCurve2 => {
-                DWIND_CURVE2.to_vec()
+                static_sample(&matrices, &DWIND_CURVE2.to_vec())
             }
         };
 
@@ -271,13 +271,20 @@ impl PaletteColor {
                 self.colors_u8(&points)
             }
             ColorSampler::Diagonal => {
-                vec![]
+                let matrices = self.sampling_rect.get_cloned().matrices();
+                let points = x_sample_coords.into_iter().map(|v| (v, 1. - v)).collect::<Vec<_>>();
+                let curve = static_sample(&matrices, &points);
+                self.colors_u8(&curve)
             }
             ColorSampler::DwindCurve => {
-                self.colors_u8(&DWIND_CURVE.to_vec())
+                let matrices = self.sampling_rect.get_cloned().matrices();
+                let curve = static_sample(&matrices, &DWIND_CURVE.to_vec());
+                self.colors_u8(&curve)
             }
             ColorSampler::DwindCurve2 => {
-                self.colors_u8(&DWIND_CURVE2.to_vec())
+                let matrices = self.sampling_rect.get_cloned().matrices();
+                let curve = static_sample(&matrices, &DWIND_CURVE2.to_vec());
+                self.colors_u8(&curve)
             }
         }.into_iter().enumerate().map(|(idx, (r, g, b))| {
             (TAILWIND_NUMBERS[idx], format!("{}", hex_color::HexColor::rgb(r, g, b).display_rgba()))

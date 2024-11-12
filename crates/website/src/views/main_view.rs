@@ -30,7 +30,7 @@ pub fn main_view() -> Dom {
         always(palette_controls(palette.clone(), export_file_content.clone(), export_image_content.clone())),
         always(html!("div", {
             .dwclass!("flex justify-center w-full h-screen align-items-start")
-            .dwclass!("linear-gradient-180 gradient-from-woodsmoke-800 gradient-to-woodsmoke-950")
+            .dwclass!("linear-gradient-180 gradient-from-woodsmoke-700 gradient-to-woodsmoke-950")
             .child(palette_view(palette, export_file_content, export_image_content))
         })),
     )

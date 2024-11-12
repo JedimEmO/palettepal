@@ -7,11 +7,11 @@ members = ["crates/website"]
 [workspace.dependencies]
 anyhow = "1.0.86"
 dominator = "0.5.36"
-dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
-dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
-dwind-build = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
-dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
-dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "082999ccad950194b4f260850fa6cef2d4f0a0e7" }
+dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "dd90e621ace5de20d703781aa994f0b0b83516b3" }
+dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "dd90e621ace5de20d703781aa994f0b0b83516b3" }
+dwind-build = { git = "https://github.com/JedimEmO/dwind.git", rev = "dd90e621ace5de20d703781aa994f0b0b83516b3" }
+dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "dd90e621ace5de20d703781aa994f0b0b83516b3" }
+dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "dd90e621ace5de20d703781aa994f0b0b83516b3" }
 futures = "0.3.30"
 futures-signals = "0.3.34"
 glam = { version = "0.29.2" }
@@ -19,7 +19,7 @@ js-sys = "0.3.70"
 log = "0.4.22"
 serde = "1.0.214"
 serde_json = "1.0.132"
-web-sys = { version = "0.3.70", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Storage", "Clipboard", "File", "HtmlAnchorElement", "WebGl2RenderingContext", "WebGlShader", "WebGlProgram", "WebGlBuffer", "WebGlVertexArrayObject", "WebGlUniformLocation", "ImageData"] }
+web-sys = { version = "0.3.70", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "Storage", "Clipboard", "File", "FileReader", "HtmlAnchorElement", "WebGl2RenderingContext", "WebGlShader", "WebGlProgram", "WebGlBuffer", "WebGlVertexArrayObject", "WebGlUniformLocation", "ImageData"] }
 wasm-bindgen = { version = "0.2.95" }
 wasm-bindgen-futures = "0.4.43"
 wasm-log = "0.3.1"

@@ -123,7 +123,7 @@ dependencies = [
  "futures-channel",
  "futures-signals",
  "futures-util",
- "gloo-events",
+ "gloo-events 0.1.2",
  "js-sys",
  "once_cell",
  "pin-project",
@@ -135,7 +135,7 @@ dependencies = [
 [[package]]
 name = "dominator-css-bindgen"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "case",
  "cssparser",
@@ -163,7 +163,7 @@ dependencies = [
 [[package]]
 name = "dwind"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "const_format",
  "dominator",
@@ -181,7 +181,7 @@ dependencies = [
 [[package]]
 name = "dwind-base"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "dominator",
  "futures-signals",
@@ -190,7 +190,7 @@ dependencies = [
 [[package]]
 name = "dwind-build"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "serde",
  "serde_json",
@@ -199,7 +199,7 @@ dependencies = [
 [[package]]
 name = "dwind-macros"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "dominator",
  "dwind-base",
@@ -212,7 +212,7 @@ dependencies = [
 [[package]]
 name = "dwui"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "const_format",
  "dominator",
@@ -360,6 +360,29 @@ version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68b107f8abed8105e4182de63845afcc7b69c098b7852a813ea7462a320992fc"
 dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-events"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27c26fb45f7c385ba980f5fa87ac677e363949e065a083722697ef1b2cc91e41"
+dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-file"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97563d71863fb2824b2e974e754a81d19c4a7ec47b09ced8a0e6656b6d54bd1f"
+dependencies = [
+ "futures-channel",
+ "gloo-events 0.2.0",
+ "js-sys",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -577,7 +600,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 [[package]]
 name = "modern-normalize-cssys"
 version = "0.1.0"
-source = "git+https://github.com/JedimEmO/dwind.git?rev=082999ccad950194b4f260850fa6cef2d4f0a0e7#082999ccad950194b4f260850fa6cef2d4f0a0e7"
+source = "git+https://github.com/JedimEmO/dwind.git?rev=dd90e621ace5de20d703781aa994f0b0b83516b3#dd90e621ace5de20d703781aa994f0b0b83516b3"
 dependencies = [
  "dominator",
  "dominator-css-bindgen",
@@ -624,6 +647,7 @@ dependencies = [
  "futures-signals",
  "futures-signals-component-macro 0.3.0",
  "glam",
+ "gloo-file",
  "hex_color",
  "hsv",
  "jascpal",
