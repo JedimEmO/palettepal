@@ -4,14 +4,13 @@ use crate::model::palette::{Palette};
 use dwind::prelude::*;
 use dwui::prelude::*;
 use futures_signals::signal::{not, Mutable};
-use web_sys::{window, CanvasRenderingContext2d, FileReader, HtmlAnchorElement, HtmlCanvasElement, HtmlInputElement, Url};
+use web_sys::{window, HtmlAnchorElement, HtmlInputElement, Node, Url};
 use futures_signals::signal::SignalExt;
 use gloo_file::Blob;
 use gloo_file::futures::read_as_text;
-use log::info;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::console::info;
+use crate::mixins::click_outside_collapse::click_outside_collapse_mixin;
 use crate::mixins::panel::panel_mixin;
 use crate::model::sampling::get_equidistant_points_in_range;
 
@@ -37,6 +36,7 @@ fn export_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<St
 
             Some(html!("div", {
                 .dwclass!("flex flex-col gap-2 justify-start")
+                .apply(click_outside_collapse_mixin(clone!(expanded => move || expanded.set(false))))
                 .children([
                     button!({
                         .content(Some(html!("div", {
@@ -125,10 +125,9 @@ fn save_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<Stri
     let expanded = Mutable::new(false);
 
     html!("div", {
-        .dwclass!("transition-all flex flex-col gap-2 align-items-center p-2 justify-start")
+        .dwclass!("transition-all flex flex-col gap-2 align-items-center p-2 justify-start min-w-60")
         .dwclass_signal!("h-12", not(expanded.signal()))
         .dwclass_signal!("h-64", expanded.signal())
-        .style("width", "500px")
         .apply(panel_mixin)
         .child(html!("div", {
             .dwclass!("font-bold text-lg text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-12 text-center")
@@ -144,6 +143,7 @@ fn save_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<Stri
 
             Some(html!("div", {
                 .dwclass!("flex flex-col gap-2")
+                .apply(click_outside_collapse_mixin(clone!(expanded => move || expanded.set(false))))
                 .children([
                     button!({
                         .content(Some(html!("div", {
@@ -186,30 +186,6 @@ fn save_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<Stri
                     button!({
                         .content(Some(html!("div", {
                             .dwclass!("p-l-2 p-r-2")
-                            .text("Save to local storage")
-                        })))
-                        .on_click(clone!(palette => move |_| {
-                            let palette_json = serde_json::to_string(&*palette.lock_ref()).unwrap();
-                            window().unwrap().local_storage().unwrap().unwrap().set_item("palettepal-palette", &palette_json).unwrap();
-                        }))
-                    }),
-                    button!({
-                        .content(Some(html!("div", {
-                            .dwclass!("p-l-2 p-r-2")
-                            .text("Reload from local storage")
-                        })))
-                        .on_click(clone!(palette => move |_| {
-                            let Some(palette_json) = window().unwrap().local_storage().unwrap().unwrap().get_item("palettepal-palette").unwrap() else {
-                                return;
-                            };
-
-                            let loaded_palette: Palette = serde_json::from_str(&palette_json).unwrap();
-                            palette.set(loaded_palette);
-                        }))
-                    }),
-                    button!({
-                        .content(Some(html!("div", {
-                            .dwclass!("p-l-2 p-r-2")
                             .text("Clear all")
                         })))
                         .on_click(clone!(palette => move |_| {
@@ -221,24 +197,6 @@ fn save_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<Stri
                                 return;
                             }
 
-                            palette.set(Palette::default());
-                        }))
-                    }),
-                    button!({
-                        .content(Some(html!("div", {
-                            .dwclass!("p-l-2 p-r-2")
-                            .text("Clear local storage")
-                        })))
-                        .on_click(clone!(palette => move |_| {
-                            let Ok(v) = window().unwrap().confirm_with_message("Are you sure? This will permanently delete all colors and settings") else {
-                                return;
-                            };
-
-                            if !v {
-                                return;
-                            }
-
-                            window().unwrap().local_storage().unwrap().unwrap().remove_item("palettepal-palette").unwrap();
                             palette.set(Palette::default());
                         }))
                     })
@@ -253,7 +211,7 @@ pub fn palette_controls(palette: Mutable<Palette>, export_file_content: Mutable<
         .dwclass!("flex flex-col gap-2 pointer-events-auto align-items-center")
         .children([
             html!("div", {
-                .dwclass!("@>sm:w-md @<sm:w-sm")
+                .dwclass!("@>sm:w-md @<sm:w-sm flex @sm:flex-row @<sm:flex-col")
                 .dwclass!("flex @sm:flex-row @<sm:flex-col gap-4")
                 .children([
                     html!("div", {
