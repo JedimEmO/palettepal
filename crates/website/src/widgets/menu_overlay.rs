@@ -12,7 +12,7 @@ pub fn menu_overlay(top: impl Signal<Item=Dom> + 'static, inner: impl Signal<Ite
         }))
 
         .child(html!("div", {
-            .dwclass!("grid-col-1 @sm:grid-row-1  pointer-events-none")
+            .dwclass!("grid-col-1 @sm:grid-row-1 pointer-events-none")
             .dwclass!("@sm:absolute top-0 bottom-0 left-0 right-0 overflow-y-auto")
             .child_signal(top.map(Some))
         }))
