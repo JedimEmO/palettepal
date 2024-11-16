@@ -313,14 +313,14 @@ fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec
     let mut points = vec![];
 
     for (x, y) in input_points {
-        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.) as f32);
+        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.));
         let trans_to_center = Mat3::from_translation(glam::Vec2::new(0.5, 0.5));
         let trans_back = Mat3::from_translation(glam::Vec2::new(-0.5, -0.5));
         // let mat = trans_to_center * sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2 * trans_back;
         let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
         let point = mat.transform_point2(point);
 
-        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.) as f32));
+        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
     }
 
     points
@@ -347,9 +347,10 @@ fn sigmoid_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), amplification: &f
         let trans_to_center = Mat3::from_translation(glam::Vec2::new(0.5, 0.5));
         let trans_back = Mat3::from_translation(glam::Vec2::new(-0.5, -0.5));
         let mat = trans_to_center * sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2 * trans_back;
+        let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
         let point = mat.transform_point2(point);
 
-        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.) as f32));
+        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
     }
 
     if *amplification < 0. {

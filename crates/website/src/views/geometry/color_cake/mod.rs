@@ -151,7 +151,7 @@ pub fn color_cake(
                         Some(DragPoint::TopLeft)
                     } else if (bottom_right - screen).length() < BOX_SIZE as f32 {
                         Some(DragPoint::BottomRight)
-                    } else if screen.x >= top_left.x && screen.y <= bottom_right.x && screen.y >= bottom_right.y && screen.y <= top_left.y {
+                    } else if screen.x >= top_left.x && screen.x <= bottom_right.x && screen.y <= bottom_right.y && screen.y >= top_left.y {
                         Some(DragPoint::Center)
                     } else {
                         None
@@ -215,7 +215,10 @@ pub fn color_cake(
                             color.sampling_rect.lock_mut().y.replace_with(|v| { *v + delta.y / 2.});
                             color.sampling_rect.lock_mut().height.replace_with(|v| { *v - delta.y / 2. });
                         }
-                        _ => {}
+                        DragPoint::Center => {
+                            color.sampling_rect.lock_mut().x.replace_with(|v| { *v + delta.x });
+                            color.sampling_rect.lock_mut().y.replace_with(|v| { *v + delta.y / 2.});
+                        }
                     }
                 }));
 
