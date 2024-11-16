@@ -12,7 +12,7 @@ pub mod views;
 pub mod widgets;
 pub mod mixins;
 
-use crate::views::main_view::{main_view, palette_view};
+use crate::views::main_view::{main_view};
 use dominator::{append_dom, body, stylesheet};
 use dwind::colors::DWIND_COLORS;
 use dwui::theme::colors::ColorsCssVariables;

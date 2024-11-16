@@ -23,7 +23,12 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
         .child(html!("div", {
             .dwclass!("flex flex-col gap-2")
             .children([
-                color_cake(hue.clone(), color.samples_signal(shades_per_color.signal_cloned()), (512,512)),
+                html!("div", {
+                    .dwclass!("grid")
+                    .children([
+                        color_cake(hue.clone(), color.clone(), shades_per_color.clone(), (512,512))
+                    ])
+                }),
                 html!("div", {
                     .dwclass!("flex flex-row flex-wrap w-36")
                     .children_signal_vec(shades_signal.to_signal_vec().map(|shade| {

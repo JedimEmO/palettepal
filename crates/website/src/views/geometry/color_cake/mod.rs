@@ -1,24 +1,73 @@
+pub mod transform;
+
 use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
 use crate::widgets::shader_canvas::*;
 use anyhow::anyhow;
 use dominator::{events, Dom};
 use dwind::prelude::*;
 use futures_signals::map_ref;
-use futures_signals::signal::{Mutable, ReadOnlyMutable, Signal, SignalExt};
-use glam::Vec3;
+use futures_signals::signal::{Mutable, ReadOnlyMutable, SignalExt};
+use glam::{Mat4, Vec2, Vec3, Vec4};
 use log::{error, info};
 use std::f32::consts::PI;
-use wasm_bindgen::UnwrapThrowExt;
-use web_sys::WebGl2RenderingContext;
+use std::rc::Rc;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, WebGl2RenderingContext};
+use transform::{Transform, AABB};
+use crate::model::palette::{ColorShades, PaletteColor};
+use crate::views::geometry::transform::Plane;
+
+#[derive(Copy, Clone, Debug)]
+enum DragPoint {
+    TopLeft,
+    BottomRight,
+    Center,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum Cursor {
+    Resize,
+    Move,
+}
+
+
+fn sample_line_point_to_world_color_space_pos(pos: (f32, f32)) -> [f32; 3] {
+    [pos.0, 2. * pos.1 - 1., 0.]
+}
 
 pub fn color_cake(
     hue: Mutable<f32>,
-    sample_points: impl Signal<Item=Vec<(f32, f32)>> + 'static,
+    color: PaletteColor,
+    shades_per_color: ReadOnlyMutable<ColorShades>,
     size: (i32, i32),
 ) -> Dom {
-    shader_canvas!({
+    let sample_points = color.samples_signal(shades_per_color.signal_cloned());
+
+    fn get_curve_aabb(curve: &Vec<(f32, f32)>) -> AABB {
+        let mut min = Vec2::splat(f32::INFINITY);
+        let mut max = Vec2::splat(f32::NEG_INFINITY);
+
+        for point in curve.iter() {
+            min.x = min.x.min(point.0);
+            min.y = min.y.min(point.1);
+            max.x = max.x.max(point.0);
+            max.y = max.y.max(point.1);
+        }
+
+        AABB::new(min.x, min.y, max.x, max.y)
+    }
+
+    let sample_curve_bb_signal = color.samples_signal(shades_per_color.signal_cloned()).map(|s| {
+        if s.is_empty() {
+            return None;
+        }
+
+        Some(get_curve_aabb(&s))
+    });
+
+    let cake = shader_canvas!({
         .apply(|b| {
-            dwclass!(b, "w-32 h-32")
+            dwclass!(b, "w-32 h-32 grid-col-1 grid-row-1")
         })
         .canvas_width(size.0)
         .canvas_height(size.1)
@@ -28,7 +77,7 @@ pub fn color_cake(
 
             let mut color_cake = ColorCake::new(&context).unwrap_throw();
 
-            let b = b.event(clone!(context, hue => move  |event: events::Click| {
+            let b = b.event(clone!(hue => move  |event: events::Click| {
                 info!("click event");
                 info!("offset: {}, {}", event.offset_x(), event.offset_y());
                 let x = (event.offset_x() - 64) as f32 / 128.;
@@ -61,7 +110,7 @@ pub fn color_cake(
                 draw_data_signal.for_each(move |(hue, samples)| {
                     let hue = hue / 360.;
 
-                    let _ = color_cake.draw(&context, hue, samples).inspect_err(|e| {
+                    let _ = color_cake.draw(&context, hue, samples.clone()).inspect_err(|e| {
                         error!("failed to draw color cake: {:?}", e);
                     });
 
@@ -69,12 +118,162 @@ pub fn color_cake(
                 }).await;
             })
         })
+    });
+
+    let edit_box = html!("canvas" => HtmlCanvasElement, {
+        .dwclass!("grid-col-1 grid-row-1 w-32 h-32")
+        .attr("width", &format!("{}px", size.0))
+        .attr("height", &format!("{}px", size.1))
+        .with_node!(canvas => {
+            .apply(move |b| {
+                let ctx = canvas.get_context("2d").unwrap_throw().unwrap_throw().dyn_into::<CanvasRenderingContext2d>().unwrap_throw();
+                let transform = Transform::default();
+
+                const BOX_SIZE: f64  = 32.;
+
+                let hover_cursor: Mutable<Option<Cursor>> = Mutable::new(None);
+
+                let top_left_pos = Mutable::new(Vec2::ZERO);
+                let bottom_right_pos = Mutable::new(Vec2::ZERO);
+                let bottom_left_pos = Mutable::new(Vec2::ZERO);
+                let top_right_pos = Mutable::new(Vec2::ZERO);
+
+                let dragging_corner: Mutable<Option<DragPoint >> = Mutable::new(None);
+                let prev_drag_point = Mutable::new(None::<Vec2>);
+
+                let get_hovered_drag_point= Rc::new(clone!(top_left_pos, bottom_right_pos, bottom_left_pos, top_right_pos => move |screen: Vec2| {
+                    let top_left = top_left_pos.get();
+                    let bottom_right = bottom_right_pos.get();
+                    let bottom_left = bottom_left_pos.get();
+                    let top_right = top_right_pos.get();
+
+                    if (top_left - screen).length() < BOX_SIZE as f32 {
+                        Some(DragPoint::TopLeft)
+                    } else if (bottom_right - screen).length() < BOX_SIZE as f32 {
+                        Some(DragPoint::BottomRight)
+                    } else if screen.x >= top_left.x && screen.y <= bottom_right.x && screen.y >= bottom_right.y && screen.y <= top_left.y {
+                        Some(DragPoint::Center)
+                    } else {
+                        None
+                    }
+                }));
+
+                let b = b.event(clone!(dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::MouseDown| {
+                    let x = 512. * event.offset_x() as f32 / 128.;
+                    let y = 512. * event.offset_y() as f32 / 128.;
+
+                    let xy_plane_position = transform.project_screen_pos_on_clipped_plane(Vec2::new(x, y), Plane::xy(), AABB::new(0., -1., 1., 1.));
+
+                    let _prev_point = prev_drag_point.replace(xy_plane_position);
+
+                    let corner = get_hovered_drag_point(Vec2::new(x, y));
+
+                    dragging_corner.set(corner);
+                })).global_event(clone!(dragging_corner => move |_: events::MouseUp| {
+                    dragging_corner.set(None);
+                }));
+
+                let b = b.event(clone!(dragging_corner, hover_cursor => move |event: events::MouseMove| {
+                    let x = 512. * event.offset_x() as f32 / 128.;
+                    let y = 512. * event.offset_y() as f32 / 128.;
+
+                    if let Some(hovered) = get_hovered_drag_point(Vec2::new(x, y)) {
+                        match hovered {
+                            DragPoint::Center => {
+                                hover_cursor.set(Some(Cursor::Move))
+                            }
+                            _ => {
+                                hover_cursor.set(Some(Cursor::Resize))
+                            }
+                        }
+                    } else {
+                        hover_cursor.set(None);
+                    }
+
+                    let Some(corner) = dragging_corner.get() else {
+                        return
+                    };
+
+                    let xy_plane_position = transform.project_screen_pos_on_clipped_plane(Vec2::new(x, y), Plane::xy(), AABB::new(0., -1., 1., 1.));
+
+                    let prev_point = prev_drag_point.replace(xy_plane_position);
+
+                    let (Some(new_point), Some(prev_point)) = (xy_plane_position, prev_point) else {
+                        return;
+                    };
+
+                    let delta = new_point - prev_point;
+
+                    match corner {
+                        DragPoint::TopLeft => {
+                            color.sampling_rect.lock_mut().x.replace_with(|v| { *v + delta.x });
+                            color.sampling_rect.lock_mut().width.replace_with(|v| { *v - delta.x });
+                            color.sampling_rect.lock_mut().height.replace_with(|v| { *v + delta.y / 2.});
+                        }
+                        DragPoint::BottomRight => {
+                            color.sampling_rect.lock_mut().width.replace_with(|v| { *v + delta.x });
+                            color.sampling_rect.lock_mut().y.replace_with(|v| { *v + delta.y / 2.});
+                            color.sampling_rect.lock_mut().height.replace_with(|v| { *v - delta.y / 2. });
+                        }
+                        _ => {}
+                    }
+                }));
+
+                let b = b.style_signal("cursor", hover_cursor.signal().map(|v| {
+                    match v {
+                        Some(Cursor::Resize) => {"nwse-resize"}
+                        Some(Cursor::Move) => { "move" }
+                        _ => { "default" }
+                    }
+                }));
+
+                b.future(async move {
+                    sample_curve_bb_signal.for_each(|pos| {
+                        if pos.is_some() {
+
+                            let mut pos = pos.unwrap();
+                            // transform the curve to world space
+                            pos.corner.y = 2. * (pos.corner.y - 0.5);
+                            pos.dimension.y *= 2.;
+
+                            let top_left = transform.world_to_screen(Vec3::new(pos.corner.x, pos.corner.y + pos.dimension.y, 0.));
+                            let bottom_right = transform.world_to_screen(Vec3::new(pos.corner.x + pos.dimension.x, pos.corner.y, 0.));
+
+                            ctx.clear_rect(0., 0., size.0 as f64, size.1 as f64);
+
+                            ctx.set_line_width(4.0);
+                            ctx.set_stroke_style_str("black");
+                            ctx.stroke_rect(top_left.x as f64, top_left.y as f64, (bottom_right.x - top_left.x) as f64, (bottom_right.y - top_left.y) as f64);
+
+                            // All corners
+                            ctx.set_fill_style_str("rgba(128, 128, 255, 1.0)");
+                            ctx.fill_rect(top_left.x as f64 - BOX_SIZE/2., top_left.y as f64 - BOX_SIZE/2., BOX_SIZE, BOX_SIZE);
+                            ctx.fill_rect(bottom_right.x as f64 - BOX_SIZE/2., bottom_right.y as f64 - BOX_SIZE/2., BOX_SIZE, BOX_SIZE);
+
+                            top_left_pos.set(top_left);
+                            bottom_right_pos.set(bottom_right);
+                        }
+                        async move {}
+                    }).await;
+                })
+            })
+        })
+    });
+
+    html!("div", {
+        .dwclass!("grid w-32 h-32")
+        .children([
+            cake,
+            edit_box
+        ])
     })
 }
 
 pub struct ColorCake {
     shader_program: ShaderProgram,
     line_shader_program: ShaderProgram,
+    transform: Transform,
+    sample_curve: Mutable<Vec<(f32, f32)>>,
 }
 
 impl ColorCake {
@@ -123,7 +322,33 @@ impl ColorCake {
         Ok(Self {
             shader_program,
             line_shader_program,
+            transform: Default::default(),
+            sample_curve: Default::default(),
         })
+    }
+
+    pub fn color_plane_screen_coordinates(&self) -> (Vec2, Vec2) {
+        let top_left = Vec3::new(1.5, 1., 0.);
+        let bottom_right = Vec3::new(0., -1., 0.);
+
+        let viewport = Mat4::from_cols_array(&[
+            1., 0., 0., 512. / 2.,
+            0., 1., 0., 512. / 2.,
+            0., 0., 1., 0.,
+            0., 0., 0., 1.,
+        ]) * Mat4::from_cols_array(&[
+            512. / 2., 0., 0., 0.,
+            0., 512. / 2., 0., 0.,
+            0., 0., 1., 0.,
+            0., 0., 0., 1.,
+        ]);
+
+        let mat = self.transform.projection * self.transform.scale * viewport;
+
+        let top_left = mat.transform_vector3(top_left);
+        let bottom_right = mat.transform_vector3(bottom_right);
+
+        (bottom_right.truncate() + Vec2::new(256., 256.), top_left.truncate() + Vec2::new(256., 256.))
     }
 
     pub fn draw(
@@ -132,6 +357,7 @@ impl ColorCake {
         hue: f32,
         sample_points: Vec<(f32, f32)>,
     ) -> anyhow::Result<()> {
+        self.sample_curve.set(sample_points.clone());
         let program = &self.shader_program.program;
 
         context.use_program(Some(&program));
@@ -187,11 +413,11 @@ impl ColorCake {
         context.enable_vertex_attrib_array(position_location as u32);
         context.enable_vertex_attrib_array(color_location as u32);
 
-        let scale = glam::f32::Mat4::from_scale(Vec3::new(0.6, 0.6, 0.6));
+        let scale = self.transform.scale;
 
-        let matrix = glam::f32::Mat4::look_at_rh(Vec3::new(0., 0.2, -0.3), Vec3::ZERO, Vec3::Y);
+        let view_matrix = self.transform.projection;
 
-        let matrix = matrix * scale;
+        let matrix = scale * view_matrix;
 
         WebGl2RenderingContext::uniform1f(&context, hue_location.as_ref(), hue);
         WebGl2RenderingContext::uniform_matrix4fv_with_f32_array(
@@ -230,12 +456,14 @@ impl ColorCake {
             };
 
             prev_point = Some(point);
+
             lines_points.push(ColorSpaceVertex {
-                pos: [prev.0 * -1.5, 2. * prev.1 - 1., 0.],
+                pos: sample_line_point_to_world_color_space_pos(prev),
                 hsx: [0., 0., 0.],
             });
+
             lines_points.push(ColorSpaceVertex {
-                pos: [point.0 * -1.5, 2. * point.1 - 1., 0.],
+                pos: sample_line_point_to_world_color_space_pos(point),
                 hsx: [0., 0., 0.],
             });
         }
@@ -307,10 +535,6 @@ impl ColorCake {
     }
 }
 
-fn make_cutaway_cylinder() -> Vec<ColorSpaceVertex> {
-    place_cylinder_circle(false)
-}
-
 fn place_cylinder_circle(top: bool) -> Vec<ColorSpaceVertex> {
     let y = if top { 1. } else { -1. };
     let l = (y + 1.) / 2.;
@@ -329,10 +553,10 @@ fn place_cylinder_circle(top: bool) -> Vec<ColorSpaceVertex> {
         let h = angle / (2. * PI) / pct;
         let next_h = next_angle / (2. * PI) / pct;
 
-        let x = -angle.cos() * 1.5;
-        let z = angle.sin() * 1.5;
-        let next_x = -next_angle.cos() * 1.5;
-        let next_z = next_angle.sin() * 1.5;
+        let x = angle.cos() * 1.;
+        let z = angle.sin() * 1.;
+        let next_x = next_angle.cos() * 1.;
+        let next_z = next_angle.sin() * 1.;
 
         out.push(ColorSpaceVertex {
             pos: [0., y, 0.],
@@ -368,10 +592,10 @@ fn place_cylinder_sides() -> Vec<ColorSpaceVertex> {
         let h = angle / (2. * PI) / pct;
         let next_h = next_angle / (2. * PI) / pct;
 
-        let x = -angle.cos() * 1.5;
-        let z = angle.sin() * 1.5;
-        let next_x = -next_angle.cos() * 1.5;
-        let next_z = next_angle.sin() * 1.5;
+        let x = angle.cos() * 1.;
+        let z = angle.sin() * 1.;
+        let next_x = next_angle.cos() * 1.;
+        let next_z = next_angle.sin() * 1.;
 
         // Cylinder side triangles
 
@@ -411,8 +635,8 @@ fn place_cylinder_sides() -> Vec<ColorSpaceVertex> {
     // Cylinder slice
     // A
     out.push(ColorSpaceVertex {
-        pos: [-1.5, 1., 0.],
-        hsx: [0., 1., 1.0],
+        pos: [1., 1., 0.],
+        hsx: [0., 1., 1.],
     });
 
     out.push(ColorSpaceVertex {
@@ -427,7 +651,7 @@ fn place_cylinder_sides() -> Vec<ColorSpaceVertex> {
 
     // B
     out.push(ColorSpaceVertex {
-        pos: [-1.5, 1., 0.],
+        pos: [1., 1., 0.],
         hsx: [0., 1., 1.],
     });
 
@@ -437,7 +661,7 @@ fn place_cylinder_sides() -> Vec<ColorSpaceVertex> {
     });
 
     out.push(ColorSpaceVertex {
-        pos: [-1.5, -1., 0.],
+        pos: [1., -1., 0.],
         hsx: [0., 1., 0.],
     });
 

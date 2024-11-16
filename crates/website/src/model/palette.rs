@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::model::sampling::{algebraic_simple, get_equidistant_points_in_range};
 use futures_signals::map_ref;
-use futures_signals::signal::{always, BoxSignal, Mutable, Signal, SignalExt};
+use futures_signals::signal::{always, Mutable, Signal, SignalExt};
 use futures_signals::signal_vec::MutableVec;
 use hsv::hsv_to_rgb;
 use serde::{Deserialize, Serialize};
@@ -25,19 +25,6 @@ const DWIND_CURVE: [(f32, f32); 11] = [
     (1., 0.),
 ];
 
-/*
-0	1
-0,2	0,95
-0,3	0,92
-0,4	0,86
-0,47	0,8
-0,55	0,72
-0,62	0,63
-0,7	0,53
-0,8	0,4
-0,9	0,2
-1	0
- */
 const DWIND_CURVE2: [(f32, f32); 11] = [
     (0., 1.),
     (0.2, 0.95),
@@ -329,7 +316,8 @@ fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec
         let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.) as f32);
         let trans_to_center = Mat3::from_translation(glam::Vec2::new(0.5, 0.5));
         let trans_back = Mat3::from_translation(glam::Vec2::new(-0.5, -0.5));
-        let mat = trans_to_center * sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2 * trans_back;
+        // let mat = trans_to_center * sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2 * trans_back;
+        let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
         let point = mat.transform_point2(point);
 
         points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.) as f32));

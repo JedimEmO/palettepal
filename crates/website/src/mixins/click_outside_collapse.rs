@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use dominator::{events, DomBuilder};
-use futures_signals::signal::Mutable;
 use wasm_bindgen::JsCast;
 use web_sys::{Node};
 
