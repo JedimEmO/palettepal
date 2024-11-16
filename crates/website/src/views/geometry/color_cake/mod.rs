@@ -283,8 +283,8 @@ pub fn color_cake(
 
                             ctx.clear_rect(0., 0., size.0 as f64, size.1 as f64);
 
-                            ctx.set_line_width(2.0);
-                            ctx.set_stroke_style_str("black");
+                            ctx.set_line_width(4.0);
+                            ctx.set_stroke_style_str("rgba(0, 0, 0, 0.95)");
                             ctx.stroke_rect(top_left.x as f64, top_left.y as f64, (bottom_right.x - top_left.x) as f64, (bottom_right.y - top_left.y) as f64);
 
                             // All corners
