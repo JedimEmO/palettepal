@@ -65,6 +65,19 @@ pub fn color_cake(
         Some(get_curve_aabb(&s))
     });
 
+    let sample_curve_world_pos_signal = color.samples_signal(shades_per_color.signal_cloned()).map(|s| {
+        s.into_iter().map(|(x, y)| {
+            Vec2::new(x, 2. * y - 1.)
+        }).collect::<Vec<_>>()
+    });
+
+    let render_data_signal = map_ref! {
+        let sample_curve_aabb = sample_curve_bb_signal,
+        let sample_curve = sample_curve_world_pos_signal => {
+            (*sample_curve_aabb, sample_curve.clone())
+        }
+    };
+
     let cake = shader_canvas!({
         .apply(|b| {
             dwclass!(b, "w-32 h-32 grid-col-1 grid-row-1")
@@ -129,7 +142,7 @@ pub fn color_cake(
                 let ctx = canvas.get_context("2d").unwrap_throw().unwrap_throw().dyn_into::<CanvasRenderingContext2d>().unwrap_throw();
                 let transform = Transform::default();
 
-                const BOX_SIZE: f64  = 32.;
+                const BOX_SIZE: f64  = 47.;
 
                 let hover_cursor: Mutable<Option<Cursor>> = Mutable::new(None);
 
@@ -169,15 +182,26 @@ pub fn color_cake(
                     let corner = get_hovered_drag_point(Vec2::new(x, y));
 
                     dragging_corner.set(corner);
+                })).event(clone!(dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::TouchStart| {
+                    let rect = event.target().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().get_bounding_client_rect();
+                    let x = 512. * (event.touches().next().unwrap().client_x() as f32 - rect.x() as f32) / 128.;
+                    let y = 512. * (event.touches().next().unwrap().client_y() as f32 - rect.y() as f32) / 128.;
+
+                    let xy_plane_position = transform.project_screen_pos_on_clipped_plane(Vec2::new(x, y), Plane::xy(), AABB::new(0., -1., 1., 1.));
+
+                    let _prev_point = prev_drag_point.replace(xy_plane_position);
+
+                    let corner = get_hovered_drag_point(Vec2::new(x, y));
+
+                    dragging_corner.set(corner);
+                })).event(clone!(dragging_corner => move |_: events::TouchEnd| {
+                    dragging_corner.set(None);
                 })).global_event(clone!(dragging_corner => move |_: events::MouseUp| {
                     dragging_corner.set(None);
                 }));
 
-                let b = b.event(clone!(dragging_corner, hover_cursor => move |event: events::MouseMove| {
-                    let x = 512. * event.offset_x() as f32 / 128.;
-                    let y = 512. * event.offset_y() as f32 / 128.;
-
-                    if let Some(hovered) = get_hovered_drag_point(Vec2::new(x, y)) {
+                let move_event_handler = Rc::new(clone!(dragging_corner, hover_cursor => move |pos: Vec2| {
+                    if let Some(hovered) = get_hovered_drag_point(pos) {
                         match hovered {
                             DragPoint::Center => {
                                 hover_cursor.set(Some(Cursor::Move))
@@ -194,7 +218,7 @@ pub fn color_cake(
                         return
                     };
 
-                    let xy_plane_position = transform.project_screen_pos_on_clipped_plane(Vec2::new(x, y), Plane::xy(), AABB::new(0., -1., 1., 1.));
+                    let xy_plane_position = transform.project_screen_pos_on_clipped_plane(pos, Plane::xy(), AABB::new(0., -1., 1., 1.));
 
                     let prev_point = prev_drag_point.replace(xy_plane_position);
 
@@ -222,6 +246,21 @@ pub fn color_cake(
                     }
                 }));
 
+                let b = b.event(clone!(move_event_handler => move |event: events::MouseMove| {
+                    let x = 512. * event.offset_x() as f32 / 128.;
+                    let y = 512. * event.offset_y() as f32 / 128.;
+
+                    move_event_handler(Vec2::new(x, y))
+                }));
+
+                let b = b.event(clone!(move_event_handler => move |event: events::TouchMove| {
+                    let rect = event.target().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().get_bounding_client_rect();
+                    let x = 512. * (event.touches().next().unwrap().client_x() as f32 - rect.x() as f32) / 128.;
+                    let y = 512. * (event.touches().next().unwrap().client_y() as f32 - rect.y() as f32) / 128.;
+
+                    move_event_handler(Vec2::new(x, y))
+                }));
+
                 let b = b.style_signal("cursor", hover_cursor.signal().map(|v| {
                     match v {
                         Some(Cursor::Resize) => {"nwse-resize"}
@@ -231,7 +270,7 @@ pub fn color_cake(
                 }));
 
                 b.future(async move {
-                    sample_curve_bb_signal.for_each(|pos| {
+                    render_data_signal.for_each(|(pos, curve)| {
                         if pos.is_some() {
 
                             let mut pos = pos.unwrap();
@@ -244,7 +283,7 @@ pub fn color_cake(
 
                             ctx.clear_rect(0., 0., size.0 as f64, size.1 as f64);
 
-                            ctx.set_line_width(4.0);
+                            ctx.set_line_width(2.0);
                             ctx.set_stroke_style_str("black");
                             ctx.stroke_rect(top_left.x as f64, top_left.y as f64, (bottom_right.x - top_left.x) as f64, (bottom_right.y - top_left.y) as f64);
 
@@ -255,6 +294,24 @@ pub fn color_cake(
 
                             top_left_pos.set(top_left);
                             bottom_right_pos.set(bottom_right);
+
+                            // Render curve
+                            ctx.set_stroke_style_str("black");
+                            ctx.set_line_width(8.0);
+                            ctx.begin_path();
+
+                            for (i, point) in curve.iter().enumerate() {
+                                let screen_pos = transform.world_to_screen(Vec3::new(point.x, point.y, 0.));
+
+                                if i == 0 {
+                                    ctx.move_to(screen_pos.x as f64, screen_pos.y as f64);
+                                } else {
+                                    ctx.line_to(screen_pos.x as f64, screen_pos.y as f64);
+                                }
+                            }
+
+                            // ctx.close_path();
+                            ctx.stroke();
                         }
                         async move {}
                     }).await;
@@ -447,93 +504,6 @@ impl ColorCake {
             }
         }
 
-        // Sample curve lines
-        let mut lines_points = vec![];
-
-        let mut prev_point = None;
-
-        for point in sample_points {
-            let Some(prev) = prev_point else {
-                prev_point = Some(point);
-                continue;
-            };
-
-            prev_point = Some(point);
-
-            lines_points.push(ColorSpaceVertex {
-                pos: sample_line_point_to_world_color_space_pos(prev),
-                hsx: [0., 0., 0.],
-            });
-
-            lines_points.push(ColorSpaceVertex {
-                pos: sample_line_point_to_world_color_space_pos(point),
-                hsx: [0., 0., 0.],
-            });
-        }
-
-        let program = &self.line_shader_program.program;
-
-        context.use_program(Some(&program));
-
-        let position_location = context.get_attrib_location(&program, "a_position");
-        let color_location = context.get_attrib_location(&program, "a_color");
-        let matrix_location = context.get_uniform_location(&program, "u_matrix");
-
-        let line_buffer = context
-            .create_buffer()
-            .ok_or(anyhow!("failed to create buffer"))?;
-
-        context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&line_buffer));
-
-        unsafe {
-            let data_view = js_sys::Float32Array::view_mut_raw(
-                (&mut lines_points).as_mut_ptr() as *mut f32,
-                lines_points.len() * 6,
-            );
-
-            context.buffer_data_with_array_buffer_view(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                &data_view,
-                WebGl2RenderingContext::STATIC_DRAW,
-            );
-        }
-
-        let vertex_array_object = context
-            .create_vertex_array()
-            .ok_or(anyhow!("failed to create vertex array object"))?;
-
-        context.bind_vertex_array(Some(&vertex_array_object));
-
-        context.vertex_attrib_pointer_with_i32(
-            position_location as u32,
-            3,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            6 * size_of::<f32>() as i32,
-            0,
-        );
-
-        context.vertex_attrib_pointer_with_i32(
-            color_location as u32,
-            3,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            6 * size_of::<f32>() as i32,
-            3 * size_of::<f32>() as i32,
-        );
-
-        context.enable_vertex_attrib_array(position_location as u32);
-        context.enable_vertex_attrib_array(color_location as u32);
-
-        WebGl2RenderingContext::uniform_matrix4fv_with_f32_array(
-            &context,
-            matrix_location.as_ref(),
-            false,
-            matrix.as_ref(),
-        );
-
-        context.line_width(8.);
-        context.draw_arrays(WebGl2RenderingContext::LINES, 0, lines_points.len() as i32);
         Ok(())
     }
 }
