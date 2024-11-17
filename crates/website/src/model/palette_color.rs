@@ -40,6 +40,13 @@ pub const DWIND_CURVE2: [(f32, f32); 11] = [
 ];
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub enum ColorSpace {
+    #[default]
+    HSV,
+    HSL
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PaletteColor {
     pub name: Mutable<String>,
     pub hue: Mutable<f32>,
