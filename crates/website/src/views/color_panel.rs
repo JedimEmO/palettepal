@@ -1,15 +1,17 @@
 use std::f32::consts::PI;
-use crate::model::palette::{ColorSampler, ColorShades, PaletteColor};
+use crate::model::palette::ColorShades;
 use crate::views::geometry::color_cake;
 use dominator::Dom;
 use dwind::prelude::*;
 use dwui::prelude::*;
 use dwui::{select, slider};
 use futures_signals::map_ref;
-use futures_signals::signal::{Mutable, ReadOnlyMutable, SignalExt};
 use futures_signals::signal_vec::SignalVecExt;
+use futures_signals::signal::{Mutable, ReadOnlyMutable, Signal, SignalExt};
 use once_cell::sync::Lazy;
 use crate::mixins::panel::panel_mixin;
+use crate::model::palette_color::PaletteColor;
+use crate::model::sampling::ColorSampler;
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
@@ -82,25 +84,8 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
                     .children([
-                        html!("div", {
-                            .dwclass!("grid")
-                            .children([
-                                color_cake(hue.clone(), color.clone(), shades_per_color.clone(), (512,512))
-                            ])
-                        }),
-                        html!("div", {
-                            .dwclass!("flex flex-row flex-wrap w-36")
-                            .children_signal_vec(shades_signal.to_signal_vec().map(|shade| {
-                                let color = format!("rgb({}, {}, {})", shade.0, shade.1, shade.2);
-
-                                html!("div", {
-                                    .dwclass!("w-5 h-5")
-                                    .style("background-color", color)
-                                })
-                            }))
-                        })
+                        color_cake(hue.clone(), color.clone(), shades_per_color.clone(), (512,512)),
                     ])
-
                 }))
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-1")
@@ -187,7 +172,22 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                     ])
                 }))
             }))
+            .child(horizontal_color_bar(shades_signal))
             .child_signal(advanced_settings)
+        }))
+    })
+}
+
+fn horizontal_color_bar(shades_signal: impl Signal<Item=Vec<(u8, u8, u8)>> + 'static) -> Dom {
+    html!("div", {
+        .dwclass!("flex flex-row w-full justify-center m-t-4 p-l-16 p-r-16")
+        .children_signal_vec(shades_signal.to_signal_vec().map(|shade| {
+            let color = format!("rgb({}, {}, {})", shade.0, shade.1, shade.2);
+
+            html!("div", {
+                .dwclass!("@sm:aspect-video @<sm:aspect-square flex-1")
+                .style("background-color", color)
+            })
         }))
     })
 }

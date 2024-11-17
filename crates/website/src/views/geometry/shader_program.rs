@@ -31,6 +31,7 @@ impl ShaderProgram {
             WebGl2RenderingContext::VERTEX_SHADER,
             vertex_shader,
         )?;
+
         let frag = compile_shader(
             &context,
             WebGl2RenderingContext::FRAGMENT_SHADER,

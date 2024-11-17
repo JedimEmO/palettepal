@@ -1,4 +1,10 @@
 use js_sys::Math::sqrt;
+use serde::{Deserialize, Serialize};
+use futures_signals::signal::{Mutable, Signal};
+use glam::{Mat3, Vec2};
+use futures_signals::map_ref;
+use std::str::FromStr;
+use hsv::hsv_to_rgb;
 
 pub fn get_equidistant_points_in_range(start: f32, end: f32, count: usize) -> Vec<f32> {
     let mut points = vec![];
@@ -15,4 +21,170 @@ pub fn get_equidistant_points_in_range(start: f32, end: f32, count: usize) -> Ve
 
 pub fn algebraic_simple(x: f64) -> f64 {
     x / sqrt(1. + x.powi(2))
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ColorSampler {
+    Sigmoid {
+        amplification: Mutable<f32>,
+    },
+    Diagonal,
+    DwindCurve,
+    DwindCurve2,
+}
+
+impl Default for ColorSampler {
+    fn default() -> Self {
+        Self::Sigmoid { amplification: 4.0.into() }
+    }
+}
+
+impl ToString for ColorSampler {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Sigmoid { .. } => "Sigmoid".to_string(),
+            Self::Diagonal => "Diagonal".to_string(),
+            Self::DwindCurve => "DwindCurve".to_string(),
+            Self::DwindCurve2 => "DwindCurve2".to_string(),
+        }
+    }
+}
+
+impl FromStr for ColorSampler {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Sigmoid" => Ok(Self::Sigmoid { amplification: Mutable::new(4.) }),
+            "Diagonal" => Ok(Self::Diagonal),
+            "DwindCurve" => Ok(Self::DwindCurve),
+            "DwindCurve2" => Ok(Self::DwindCurve2),
+            _ => Err(()),
+        }
+    }
+}
+
+/// Defines the rectangle within a color plane for which the sampling method applies.
+/// The sampling coordinate space (0..1, 0..1) is in this rectangles local coordinate system
+///
+/// Note: This rectangle can be rotated...
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SamplingRect {
+    pub x: Mutable<f32>,
+    pub y: Mutable<f32>,
+    pub width: Mutable<f32>,
+    pub height: Mutable<f32>,
+    pub rotation: Mutable<f32>,
+}
+
+impl Default for SamplingRect {
+    fn default() -> Self {
+        Self {
+            x: Mutable::new(0.),
+            y: Mutable::new(0.),
+            width: Mutable::new(1.),
+            height: Mutable::new(1.),
+            rotation: Mutable::new(0.),
+        }
+    }
+}
+
+impl SamplingRect {
+    pub fn translate_mat(&self) -> Mat3 {
+        Mat3::from_translation(glam::Vec2::new(self.x.get(), self.y.get()))
+    }
+
+    pub fn scale_mat(&self) -> Mat3 {
+        Mat3::from_scale(glam::Vec2::new(self.width.get(), self.height.get()))
+    }
+
+    pub fn rotate_mat(&self) -> Mat3 {
+        Mat3::from_rotation_z(self.rotation.get())
+    }
+
+    pub fn matrices_signal(&self) -> impl Signal<Item=(Mat3, Mat3, Mat3)> {
+        map_ref! {
+            let x = self.x.signal(),
+            let y = self.y.signal(),
+            let width = self.width.signal(),
+            let height = self.height.signal(),
+            let rotation= self.rotation.signal() => {
+                (Mat3::from_translation(glam::Vec2::new(*x, *y)),
+                 Mat3::from_scale(glam::Vec2::new(*width, *height)),
+                 Mat3::from_rotation_z(*rotation))
+            }
+        }
+    }
+
+    pub fn matrices(&self) -> (Mat3, Mat3, Mat3) {
+        (Mat3::from_translation(glam::Vec2::new(self.x.get(), self.y.get())),
+         Mat3::from_scale(glam::Vec2::new(self.width.get(), self.height.get())),
+         Mat3::from_rotation_z(self.rotation.get()))
+    }
+}
+
+
+pub fn colors_u8(hue: f32, sample_coords: &Vec<(f32, f32)>) -> Vec<(u8, u8, u8)> {
+    let mut out_colors = vec![];
+
+    for shade in sample_coords {
+        let color = hsv_to_rgb((hue as f64).clamp(0., 360.), shade.0 as f64, shade.1 as f64);
+        out_colors.push(color);
+    }
+
+    out_colors
+}
+
+pub fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, points_signal: impl Signal<Item=Vec<(f32, f32)>> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
+    map_ref! {
+        let points = points_signal,
+        let sampling_rect_matrices = sampling_rect_matrices_signal => {
+            static_sample(sampling_rect_matrices, points)
+        }
+    }
+}
+
+pub fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec<(f32, f32)>) -> Vec<(f32, f32)> {
+    let mut points = vec![];
+
+    for (x, y) in input_points {
+        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.));
+        let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
+        let point = mat.transform_point2(point);
+
+        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
+    }
+
+    points
+}
+
+pub fn sigmoid_sample_signal(amplification: Mutable<f32>, sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, sampling_x_coords_signal: impl Signal<Item=Vec<f32>> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
+    map_ref! {
+        let sampling_rect_matrices = sampling_rect_matrices_signal,
+        let amplification = amplification.signal(),
+        let x_coords = sampling_x_coords_signal => {
+            sigmoid_sample(sampling_rect_matrices, amplification, x_coords.clone())
+        }
+    }
+}
+
+pub fn sigmoid_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), amplification: &f32, x_coords: Vec<f32>) -> Vec<(f32, f32)> {
+    let mut points = vec![];
+
+    for x in x_coords {
+        let x_samp = (x - 0.5) * amplification;
+        let y = 0.5 - algebraic_simple(x_samp as f64) * 1. / 2.;
+
+        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.) as f32);
+        let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
+        let point = mat.transform_point2(point);
+
+        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
+    }
+
+    if *amplification < 0. {
+        points.reverse();
+    }
+
+    points
 }

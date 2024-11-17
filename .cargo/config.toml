@@ -2,6 +2,6 @@
 runner = 'wasm-bindgen-test-runner'
 
 [profile.release]
-opt-level = "z"
+opt-level = 'z'
 lto = true
 codegen-units = 1

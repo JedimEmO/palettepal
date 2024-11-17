@@ -1,20 +1,20 @@
 pub mod transform;
+pub mod cylinder_geometry;
+pub mod color_cake_renderer;
 
-use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
 use crate::widgets::shader_canvas::*;
-use anyhow::anyhow;
 use dominator::{events, Dom};
 use dwind::prelude::*;
 use futures_signals::map_ref;
 use futures_signals::signal::{Mutable, ReadOnlyMutable, SignalExt};
-use glam::{Mat4, Vec2, Vec3, Vec4};
-use log::{error, info};
-use std::f32::consts::PI;
+use glam::{Vec2, Vec3};
 use std::rc::Rc;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, WebGl2RenderingContext};
 use transform::{Transform, AABB};
-use crate::model::palette::{ColorShades, PaletteColor};
+use crate::model::palette::ColorShades;
+use crate::model::palette_color::PaletteColor;
+use crate::views::geometry::color_cake_renderer::ColorCake;
 use crate::views::geometry::transform::Plane;
 
 #[derive(Copy, Clone, Debug)]
@@ -30,16 +30,11 @@ enum Cursor {
     Move,
 }
 
-
-fn sample_line_point_to_world_color_space_pos(pos: (f32, f32)) -> [f32; 3] {
-    [pos.0, 2. * pos.1 - 1., 0.]
-}
-
 pub fn color_cake(
     hue: Mutable<f32>,
     color: PaletteColor,
     shades_per_color: ReadOnlyMutable<ColorShades>,
-    size: (i32, i32),
+    resolution: (i32, i32),
 ) -> Dom {
     let sample_points = color.samples_signal(shades_per_color.signal_cloned());
 
@@ -82,35 +77,13 @@ pub fn color_cake(
         .apply(|b| {
             dwclass!(b, "w-32 h-32 grid-col-1 grid-row-1")
         })
-        .canvas_width(size.0)
-        .canvas_height(size.1)
+        .canvas_width(resolution.0)
+        .canvas_height(resolution.1)
         .ctor(move |context, b| {
-            context.viewport(0, 0, size.0, size.1);
+            context.viewport(0, 0, resolution.0, resolution.1);
             context.enable(WebGl2RenderingContext::CULL_FACE);
 
             let mut color_cake = ColorCake::new(&context).unwrap_throw();
-
-            let b = b.event(clone!(hue => move  |event: events::Click| {
-                info!("click event");
-                info!("offset: {}, {}", event.offset_x(), event.offset_y());
-                let x = (event.offset_x() - 64) as f32 / 128.;
-                let y = -(event.offset_y() - 64) as f32/ 128.;
-
-                info!("click: {}, {}", x, y);
-
-                // Skip the cutout of the cake
-                if x > 0. && y < 0. {
-                    return;
-                }
-
-                let angle = y.atan2(x);
-
-                // convert the clicked angle into 3/4 angle space
-                let angle = angle * 5. / 4.;
-                let angle = hue.get() + angle.to_degrees();
-
-                hue.set(angle.rem_euclid(360.).floor());
-            }));
 
             b.future(async move {
                 let draw_data_signal = map_ref! {
@@ -135,8 +108,8 @@ pub fn color_cake(
 
     let edit_box = html!("canvas" => HtmlCanvasElement, {
         .dwclass!("grid-col-1 grid-row-1 w-32 h-32")
-        .attr("width", &format!("{}px", size.0))
-        .attr("height", &format!("{}px", size.1))
+        .attr("width", &format!("{}px", resolution.0))
+        .attr("height", &format!("{}px", resolution.1))
         .with_node!(canvas => {
             .apply(move |b| {
                 let ctx = canvas.get_context("2d").unwrap_throw().unwrap_throw().dyn_into::<CanvasRenderingContext2d>().unwrap_throw();
@@ -148,17 +121,13 @@ pub fn color_cake(
 
                 let top_left_pos = Mutable::new(Vec2::ZERO);
                 let bottom_right_pos = Mutable::new(Vec2::ZERO);
-                let bottom_left_pos = Mutable::new(Vec2::ZERO);
-                let top_right_pos = Mutable::new(Vec2::ZERO);
 
                 let dragging_corner: Mutable<Option<DragPoint >> = Mutable::new(None);
                 let prev_drag_point = Mutable::new(None::<Vec2>);
 
-                let get_hovered_drag_point= Rc::new(clone!(top_left_pos, bottom_right_pos, bottom_left_pos, top_right_pos => move |screen: Vec2| {
+                let get_hovered_drag_point= Rc::new(clone!(top_left_pos, bottom_right_pos => move |screen: Vec2| {
                     let top_left = top_left_pos.get();
                     let bottom_right = bottom_right_pos.get();
-                    let bottom_left = bottom_left_pos.get();
-                    let top_right = top_right_pos.get();
 
                     if (top_left - screen).length() < BOX_SIZE as f32 {
                         Some(DragPoint::TopLeft)
@@ -281,7 +250,7 @@ pub fn color_cake(
                             let top_left = transform.world_to_screen(Vec3::new(pos.corner.x, pos.corner.y + pos.dimension.y, 0.));
                             let bottom_right = transform.world_to_screen(Vec3::new(pos.corner.x + pos.dimension.x, pos.corner.y, 0.));
 
-                            ctx.clear_rect(0., 0., size.0 as f64, size.1 as f64);
+                            ctx.clear_rect(0., 0., resolution.0 as f64, resolution.1 as f64);
 
                             ctx.set_line_width(4.0);
                             ctx.set_stroke_style_str("rgba(0, 0, 0, 0.95)");
@@ -310,7 +279,6 @@ pub fn color_cake(
                                 }
                             }
 
-                            // ctx.close_path();
                             ctx.stroke();
                         }
                         async move {}
@@ -329,314 +297,3 @@ pub fn color_cake(
     })
 }
 
-pub struct ColorCake {
-    shader_program: ShaderProgram,
-    line_shader_program: ShaderProgram,
-    transform: Transform,
-    sample_curve: Mutable<Vec<(f32, f32)>>,
-}
-
-impl ColorCake {
-    pub fn new(context: &WebGl2RenderingContext) -> anyhow::Result<Self> {
-        let mut sides = place_cylinder_sides();
-        let mut top_disk = place_cylinder_circle(true);
-        let mut bottom_disk = place_cylinder_circle(false);
-
-        let mut geometries = vec![];
-
-        geometries.push(GeometryIndex::Triangles {
-            start_index: 0,
-            count: bottom_disk.len(),
-        });
-        geometries.push(GeometryIndex::Triangles {
-            start_index: bottom_disk.len(),
-            count: sides.len(),
-        });
-        geometries.push(GeometryIndex::Triangles {
-            start_index: bottom_disk.len() + sides.len(),
-            count: top_disk.len(),
-        });
-
-        let mut vertices = vec![];
-
-        vertices.append(&mut bottom_disk);
-        vertices.append(&mut sides);
-        vertices.append(&mut top_disk);
-
-        let shader_program = ShaderProgram::new(
-            context,
-            include_str!("shaders/cake_vertex.glsl"),
-            include_str!("shaders/cake_fragment.glsl"),
-            vertices,
-            geometries,
-        )?;
-
-        let line_shader_program = ShaderProgram::new(
-            context,
-            include_str!("shaders/line_vertex.glsl"),
-            include_str!("shaders/line_fragment.glsl"),
-            vec![],
-            vec![],
-        )?;
-
-        Ok(Self {
-            shader_program,
-            line_shader_program,
-            transform: Default::default(),
-            sample_curve: Default::default(),
-        })
-    }
-
-    pub fn color_plane_screen_coordinates(&self) -> (Vec2, Vec2) {
-        let top_left = Vec3::new(1.5, 1., 0.);
-        let bottom_right = Vec3::new(0., -1., 0.);
-
-        let viewport = Mat4::from_cols_array(&[
-            1., 0., 0., 512. / 2.,
-            0., 1., 0., 512. / 2.,
-            0., 0., 1., 0.,
-            0., 0., 0., 1.,
-        ]) * Mat4::from_cols_array(&[
-            512. / 2., 0., 0., 0.,
-            0., 512. / 2., 0., 0.,
-            0., 0., 1., 0.,
-            0., 0., 0., 1.,
-        ]);
-
-        let mat = self.transform.projection * self.transform.scale * viewport;
-
-        let top_left = mat.transform_vector3(top_left);
-        let bottom_right = mat.transform_vector3(bottom_right);
-
-        (bottom_right.truncate() + Vec2::new(256., 256.), top_left.truncate() + Vec2::new(256., 256.))
-    }
-
-    pub fn draw(
-        &mut self,
-        context: &WebGl2RenderingContext,
-        hue: f32,
-        sample_points: Vec<(f32, f32)>,
-    ) -> anyhow::Result<()> {
-        self.sample_curve.set(sample_points.clone());
-        let program = &self.shader_program.program;
-
-        context.use_program(Some(&program));
-
-        let position_location = context.get_attrib_location(&program, "a_position");
-        let color_location = context.get_attrib_location(&program, "a_color");
-        let hue_location = context.get_uniform_location(&program, "u_hue");
-        let matrix_location = context.get_uniform_location(&program, "u_matrix");
-
-        let buffer = context
-            .create_buffer()
-            .ok_or(anyhow!("failed to create buffer"))?;
-
-        context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-
-        unsafe {
-            let data_view = js_sys::Float32Array::view_mut_raw(
-                (&mut self.shader_program.vertices).as_mut_ptr() as *mut f32,
-                self.shader_program.vertices.len() * 6,
-            );
-
-            context.buffer_data_with_array_buffer_view(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                &data_view,
-                WebGl2RenderingContext::STATIC_DRAW,
-            );
-        }
-
-        let vertex_array_object = context
-            .create_vertex_array()
-            .ok_or(anyhow!("failed to create vertex array object"))?;
-
-        context.bind_vertex_array(Some(&vertex_array_object));
-
-        context.vertex_attrib_pointer_with_i32(
-            position_location as u32,
-            3,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            6 * size_of::<f32>() as i32,
-            0,
-        );
-
-        context.vertex_attrib_pointer_with_i32(
-            color_location as u32,
-            3,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            6 * size_of::<f32>() as i32,
-            3 * size_of::<f32>() as i32,
-        );
-
-        context.enable_vertex_attrib_array(position_location as u32);
-        context.enable_vertex_attrib_array(color_location as u32);
-
-        let scale = self.transform.scale;
-
-        let view_matrix = self.transform.projection;
-
-        let matrix = scale * view_matrix;
-
-        WebGl2RenderingContext::uniform1f(&context, hue_location.as_ref(), hue);
-        WebGl2RenderingContext::uniform_matrix4fv_with_f32_array(
-            &context,
-            matrix_location.as_ref(),
-            false,
-            matrix.as_ref(),
-        );
-
-        context.clear_color(0.0, 0.0, 0.0, 0.0);
-        context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-        context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
-        context.clear_depth(0.);
-
-        for geometry in self.shader_program.geometries.iter() {
-            match geometry {
-                GeometryIndex::Triangles { start_index, count } => {
-                    context.draw_arrays(
-                        WebGl2RenderingContext::TRIANGLES,
-                        *start_index as i32,
-                        *count as i32,
-                    );
-                }
-            }
-        }
-
-        Ok(())
-    }
-}
-
-fn place_cylinder_circle(top: bool) -> Vec<ColorSpaceVertex> {
-    let y = if top { 1. } else { -1. };
-    let l = (y + 1.) / 2.;
-
-    let mut out = vec![];
-
-    let num_verts = 32;
-    let slice_radius = (3. * PI / 2.) / num_verts as f32;
-    let start_angle = 3. * PI / 2.;
-    let pct = start_angle / (PI * 2.);
-
-    for sector in 0..num_verts {
-        let angle = start_angle - (sector as f32 * slice_radius);
-        let next_angle = start_angle - ((sector + 1) as f32 * slice_radius);
-
-        let h = angle / (2. * PI) / pct;
-        let next_h = next_angle / (2. * PI) / pct;
-
-        let x = angle.cos() * 1.;
-        let z = angle.sin() * 1.;
-        let next_x = next_angle.cos() * 1.;
-        let next_z = next_angle.sin() * 1.;
-
-        out.push(ColorSpaceVertex {
-            pos: [0., y, 0.],
-            hsx: [next_h, 0., l],
-        });
-
-        out.push(ColorSpaceVertex {
-            pos: [next_x, y, next_z],
-            hsx: [next_h, 1., l],
-        });
-
-        out.push(ColorSpaceVertex {
-            pos: [x, y, z],
-            hsx: [h, 1., l],
-        });
-    }
-
-    out
-}
-
-fn place_cylinder_sides() -> Vec<ColorSpaceVertex> {
-    let mut out = vec![];
-
-    let num_verts = 32;
-    let slice_radius = (3. * PI / 2.) / num_verts as f32;
-    let start_angle = 3. * PI / 2.;
-    let pct = start_angle / (PI * 2.);
-
-    for sector in 0..num_verts {
-        let angle = start_angle - (sector as f32 * slice_radius);
-        let next_angle = start_angle - ((sector + 1) as f32 * slice_radius);
-
-        let h = angle / (2. * PI) / pct;
-        let next_h = next_angle / (2. * PI) / pct;
-
-        let x = angle.cos() * 1.;
-        let z = angle.sin() * 1.;
-        let next_x = next_angle.cos() * 1.;
-        let next_z = next_angle.sin() * 1.;
-
-        // Cylinder side triangles
-
-        //A
-        out.push(ColorSpaceVertex {
-            pos: [x, 1., z],
-            hsx: [h, 1., 1.0],
-        });
-
-        out.push(ColorSpaceVertex {
-            pos: [next_x, -1., next_z],
-            hsx: [next_h, 1., 0.],
-        });
-
-        out.push(ColorSpaceVertex {
-            pos: [x, -1., z],
-            hsx: [h, 1., 0.],
-        });
-
-        // B
-        out.push(ColorSpaceVertex {
-            pos: [next_x, -1., next_z],
-            hsx: [next_h, 1., 0.],
-        });
-
-        out.push(ColorSpaceVertex {
-            pos: [x, 1., z],
-            hsx: [h, 1., 1.0],
-        });
-
-        out.push(ColorSpaceVertex {
-            pos: [next_x, 1., next_z],
-            hsx: [next_h, 1., 1.0],
-        });
-    }
-
-    // Cylinder slice
-    // A
-    out.push(ColorSpaceVertex {
-        pos: [1., 1., 0.],
-        hsx: [0., 1., 1.],
-    });
-
-    out.push(ColorSpaceVertex {
-        pos: [0., 1., 0.],
-        hsx: [0., 0., 1.],
-    });
-
-    out.push(ColorSpaceVertex {
-        pos: [0., -1., 0.],
-        hsx: [0., 0., 0.],
-    });
-
-    // B
-    out.push(ColorSpaceVertex {
-        pos: [1., 1., 0.],
-        hsx: [0., 1., 1.],
-    });
-
-    out.push(ColorSpaceVertex {
-        pos: [0., -1., 0.],
-        hsx: [0., 0., 0.],
-    });
-
-    out.push(ColorSpaceVertex {
-        pos: [1., -1., 0.],
-        hsx: [0., 1., 0.],
-    });
-
-    out
-}

@@ -1,4 +1,4 @@
-use crate::model::palette::{ColorSampler, ColorShades, Palette, PaletteColor};
+use crate::model::palette::{ColorShades, Palette};
 use crate::views::color_panel::color_panel;
 use dominator::Dom;
 use dwind::prelude::*;
@@ -7,6 +7,8 @@ use futures_signals::signal_vec::{MutableVec, SignalVecExt};
 use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use crate::mixins::panel::panel_mixin;
+use crate::model::palette_color::PaletteColor;
+use crate::model::sampling::ColorSampler;
 use crate::views::palette_controls::palette_controls;
 use crate::widgets::menu_overlay::menu_overlay;
 

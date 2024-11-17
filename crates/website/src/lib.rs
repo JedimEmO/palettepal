@@ -7,6 +7,9 @@ extern crate dwind_macros;
 #[macro_use]
 extern crate dwui;
 
+#[macro_use]
+extern crate log;
+
 pub mod model;
 pub mod views;
 pub mod widgets;
