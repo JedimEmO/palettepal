@@ -6,6 +6,7 @@ members = ["crates/website"]
 
 [workspace.dependencies]
 anyhow = "1.0.86"
+colors-transform = "0.2.11"
 dominator = "0.5.36"
 dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "71fde16e3e4f75b9fff488dafd02b614d0bbf99b" }
 dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "71fde16e3e4f75b9fff488dafd02b614d0bbf99b" }

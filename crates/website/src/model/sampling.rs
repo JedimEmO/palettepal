@@ -124,11 +124,22 @@ impl SamplingRect {
 }
 
 
-pub fn colors_u8(hue: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
+pub fn hsv_colors_u8(hue: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
     let mut out_colors = vec![];
 
     for shade in sample_coords {
         let color = hsv_to_rgb((hue as f64).clamp(0., 360.), shade.x as f64, shade.y as f64);
+        out_colors.push(color);
+    }
+
+    out_colors
+}
+
+pub fn hsl_colors_u8(hue: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
+    let mut out_colors = vec![];
+
+    for shade in sample_coords {
+        let color = hsl::HSL { h: (hue as f64).clamp(0., 360.), s: shade.x as f64, l: shade.y as f64 }.to_rgb();
         out_colors.push(color);
     }
 

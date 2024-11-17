@@ -81,7 +81,7 @@ pub fn color_cake(
         })
         .canvas_width(resolution.0)
         .canvas_height(resolution.1)
-        .ctor(move |context, b| {
+        .ctor(clone!(color => move |context, b| {
             context.viewport(0, 0, resolution.0, resolution.1);
             context.enable(WebGl2RenderingContext::CULL_FACE);
 
@@ -90,22 +90,23 @@ pub fn color_cake(
             b.future(async move {
                 let draw_data_signal = map_ref! {
                     let hue = hue.signal(),
+                    let space = color.color_space.signal(),
                     let samples = sample_points => {
-                        (*hue, samples.clone())
+                        (*hue, *space, samples.clone())
                     }
                 };
 
-                draw_data_signal.for_each(move |(hue, samples)| {
+                draw_data_signal.for_each(move |(hue, color_space, samples)| {
                     let hue = hue / 360.;
 
-                    let _ = color_cake.draw(&context, hue, samples.clone()).inspect_err(|e| {
+                    let _ = color_cake.draw(&context, hue, color_space, samples.clone()).inspect_err(|e| {
                         error!("failed to draw color cake: {:?}", e);
                     });
 
                     async move {}
                 }).await;
             })
-        })
+        }))
     });
 
     let edit_box = html!("canvas" => HtmlCanvasElement, {

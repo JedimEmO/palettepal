@@ -1,5 +1,7 @@
 use dwind_build::colors::Color;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use futures_signals::signal::{Mutable, Signal, SignalExt};
 use futures_signals::map_ref;
 use futures_signals::signal_map::{MutableBTreeMap, SignalMapExt};
@@ -8,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use wasm_bindgen::UnwrapThrowExt;
 use crate::model::palette::TAILWIND_NUMBERS;
-use crate::model::sampling::{colors_u8, static_sample, static_sample_signal, SamplingRect};
+use crate::model::sampling::{hsl_colors_u8, hsv_colors_u8, static_sample, static_sample_signal, SamplingRect};
 use crate::model::sampling_curve::SamplingCurve;
 
 pub const DWIND_CURVE: [(f32, f32); 11] = [
@@ -39,17 +41,39 @@ pub const DWIND_CURVE2: [(f32, f32); 11] = [
     (1., 0.),
 ];
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub enum ColorSpace {
     #[default]
     HSV,
     HSL
 }
 
+impl Display for ColorSpace {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ColorSpace::HSV => write!(f, "HSV"),
+            ColorSpace::HSL => write!(f, "HSL"),
+        }
+    }
+}
+
+impl FromStr for ColorSpace {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "HSV" => Ok(Self::HSV),
+            "HSL" => Ok(Self::HSL),
+            _ => Err(())
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PaletteColor {
     pub name: Mutable<String>,
     pub hue: Mutable<f32>,
+    pub color_space: Mutable<ColorSpace>,
     pub sampling_rect: Mutable<SamplingRect>,
     pub sampling_curve_id: Mutable<Uuid>,
 }
@@ -59,6 +83,7 @@ impl PaletteColor {
         Self {
             name: Mutable::new(format!("some-color-{hue}")),
             hue: Mutable::new(hue),
+            color_space: Default::default(),
             sampling_rect: Default::default(),
             sampling_curve_id: Uuid::nil().into(),
         }
@@ -101,8 +126,12 @@ impl PaletteColor {
     ) -> impl Signal<Item=Vec<(u8, u8, u8)>> {
         map_ref! {
             let shades = self.samples_signal(sampling_curves.clone()),
+            let space = self.color_space.signal(),
             let hue = self.hue.signal() => {
-                colors_u8(*hue, shades)
+                match space {
+                    ColorSpace::HSL => hsl_colors_u8(*hue, shades),
+                    ColorSpace::HSV => hsv_colors_u8(*hue, shades),
+                }
             }
         }
     }
@@ -111,7 +140,10 @@ impl PaletteColor {
         &self,
         sample_coords: &Vec<Vec2>,
     ) -> Vec<(u8, u8, u8)> {
-        colors_u8(self.hue.get(), sample_coords)
+        match self.color_space.get() {
+            ColorSpace::HSL => hsl_colors_u8(self.hue.get(), sample_coords),
+            ColorSpace::HSV => hsv_colors_u8(self.hue.get(), sample_coords),
+        }
     }
 }
 

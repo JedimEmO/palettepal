@@ -2,6 +2,7 @@ use web_sys::WebGl2RenderingContext;
 use anyhow::anyhow;
 use futures_signals::signal::Mutable;
 use glam::Vec2;
+use crate::model::palette_color::ColorSpace;
 use crate::views::geometry::cylinder_geometry;
 use crate::views::geometry::shader_program::{GeometryIndex, ShaderProgram};
 use crate::views::geometry::transform::Transform;
@@ -58,6 +59,7 @@ impl ColorCake {
         &mut self,
         context: &WebGl2RenderingContext,
         hue: f32,
+        color_space: ColorSpace,
         sample_points: Vec<Vec2>,
     ) -> anyhow::Result<()> {
         self.sample_curve.set(sample_points.clone());
@@ -68,6 +70,7 @@ impl ColorCake {
         let position_location = context.get_attrib_location(&program, "a_position");
         let color_location = context.get_attrib_location(&program, "a_color");
         let hue_location = context.get_uniform_location(&program, "u_hue");
+        let space_location = context.get_uniform_location(&program, "u_space");
         let matrix_location = context.get_uniform_location(&program, "u_matrix");
 
         let buffer = context
@@ -121,8 +124,13 @@ impl ColorCake {
         let view_matrix = self.transform.projection;
 
         let matrix = scale * view_matrix;
+        let color_space = match color_space {
+            ColorSpace::HSV => 0,
+            ColorSpace::HSL => 1
+        };
 
         WebGl2RenderingContext::uniform1f(&context, hue_location.as_ref(), hue);
+        WebGl2RenderingContext::uniform1i(&context, space_location.as_ref(), color_space);
         WebGl2RenderingContext::uniform_matrix4fv_with_f32_array(
             &context,
             matrix_location.as_ref(),

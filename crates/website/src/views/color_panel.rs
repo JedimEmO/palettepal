@@ -108,6 +108,14 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                             .options_signal_vec(sampling_curves.entries_cloned().map(|(key, curve)| {
                                 (key.to_string(), curve.name.get_cloned())
                             }).to_signal_cloned().to_signal_vec())
+                        }),
+                        select!({
+                            .label("Color Space".to_string())
+                            .value(color.color_space.clone())
+                            .options(vec![
+                                ("HSV".to_string(), "HSV".to_string()),
+                                ("HSL".to_string(), "HSL".to_string()),
+                            ])
                         })
                     ])
                 }))
@@ -135,6 +143,7 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                                 };
 
                                 color.sampling_curve_id.set(copied.sampling_curve_id.get());
+                                color.color_space.set(copied.color_space.get());
                                 color.sampling_rect.set(serde_json::from_str(&serde_json::to_string(&copied.sampling_rect.get_cloned()).unwrap()).unwrap());
                             }))
                         }),

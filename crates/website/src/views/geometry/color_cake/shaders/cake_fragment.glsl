@@ -5,6 +5,7 @@ in vec3 out_color;
 out vec4 fragColor;
 
 uniform float u_hue;
+uniform int u_space;
 
 vec3 hsl2rgb( in vec3 c )
 {
@@ -24,7 +25,13 @@ void main() {
     float h = out_color[0] + u_hue;
     float s = out_color[1];
     float l = out_color[2];
-    vec3 color = hsv2rgb(vec3(h, s, l));
-    fragColor = vec4(color, 0.0);
+
+    if (u_space == 0) {
+        vec3 color = hsv2rgb(vec3(h, s, l));
+        fragColor = vec4(color, 0.0);
+    } else {
+        vec3 color = hsl2rgb(vec3(h, s, l));
+        fragColor = vec4(color, 0.0);
+    }
 }
 
