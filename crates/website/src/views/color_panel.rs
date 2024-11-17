@@ -1,5 +1,4 @@
 use std::f32::consts::PI;
-use crate::model::palette::ColorShades;
 use crate::views::geometry::color_cake;
 use dominator::Dom;
 use dwind::prelude::*;
@@ -7,18 +6,20 @@ use dwui::prelude::*;
 use dwui::{select, slider};
 use futures_signals::map_ref;
 use futures_signals::signal_vec::SignalVecExt;
-use futures_signals::signal::{Mutable, ReadOnlyMutable, Signal, SignalExt};
+use futures_signals::signal::{Mutable, Signal, SignalExt};
+use futures_signals::signal_map::MutableBTreeMap;
 use once_cell::sync::Lazy;
+use uuid::Uuid;
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette_color::PaletteColor;
-use crate::model::sampling::ColorSampler;
+use crate::model::sampling_curve::SamplingCurve;
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
-pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorShades>) -> Dom {
+pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>) -> Dom {
     let hue: Mutable<f32> = color.hue.clone();
 
-    let shades_signal = color.colors_u8_signal(shades_per_color.signal_cloned());
+    let shades_signal = color.colors_u8_signal(&sampling_curves);
     let show_advanced = Mutable::new(false);
 
     let advanced_settings = map_ref! {
@@ -84,7 +85,7 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
                     .children([
-                        color_cake(hue.clone(), color.clone(), shades_per_color.clone(), (512,512)),
+                        color_cake(hue.clone(), color.clone(), &sampling_curves, (512,512)),
                     ])
                 }))
                 .child(html!("div", {
@@ -103,38 +104,12 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                         }),
                         select!({
                             .label("Sampler".to_string())
-                            .value(color.sampler.clone())
-                            .options(vec![
-                                ("Sigmoid".to_string(), "Sigmoid".to_string()),
-                                ("Diagonal".to_string(), "Diagonal".to_string()),
-                                ("DwindCurve".to_string(), "DWIND Curve".to_string()),
-                                ("DwindCurve2".to_string(), "DWIND Curve 2".to_string()),
-                            ])
+                            .value(color.sampling_curve_id.clone())
+                            .options_signal_vec(sampling_curves.entries_cloned().map(|(key, curve)| {
+                                (key.to_string(), curve.name.get_cloned())
+                            }).to_signal_cloned().to_signal_vec())
                         })
                     ])
-                    .child_signal(color.sampler.signal_cloned().map(|sampler| {
-                        match sampler {
-                            ColorSampler::Sigmoid{amplification  } => {
-
-                                Some(html!("div", {
-                                    .dwclass!("flex flex-col gap-2")
-                                    .children([
-                                        slider!({
-                                            .max(13.)
-                                            .min(-13.)
-                                            .step(0.1)
-                                            .label("Amplification".to_string())
-                                            .value(amplification.clone())
-                                        })
-                                    ])
-                                }))
-
-                            }
-                            _ => {
-                                None
-                            }
-                        }
-                    }))
                 }))
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
@@ -159,7 +134,7 @@ pub fn color_panel(color: PaletteColor, shades_per_color: ReadOnlyMutable<ColorS
                                     return;
                                 };
 
-                                color.sampler.set(serde_json::from_str(&serde_json::to_string(&copied.sampler.get_cloned()).unwrap()).unwrap());
+                                color.sampling_curve_id.set(copied.sampling_curve_id.get());
                                 color.sampling_rect.set(serde_json::from_str(&serde_json::to_string(&copied.sampling_rect.get_cloned()).unwrap()).unwrap());
                             }))
                         }),

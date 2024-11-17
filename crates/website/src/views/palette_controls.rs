@@ -12,7 +12,6 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 use crate::mixins::click_outside_collapse::click_outside_collapse_mixin;
 use crate::mixins::panel::panel_mixin;
-use crate::model::sampling::get_equidistant_points_in_range;
 
 fn export_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<String>>, export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>>) -> Dom {
     let expanded = Mutable::new(false);
@@ -44,11 +43,10 @@ fn export_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<St
                             .text("Export to DWIND")
                         })))
                         .on_click(clone!(palette, export_file_content => move |_| {
-                            let sampling_coords = get_equidistant_points_in_range(0., 1., 11);
                             let mut color_file = dwind_build::colors::ColorFile {colors: vec![]};
 
                             for color in palette.lock_mut().colors.lock_mut().iter() {
-                                color_file.colors.push(color.clone().into_dwind_color(sampling_coords.clone()))
+                                color_file.colors.push(color.clone().into_dwind_color(&palette.lock_ref().sampling_curves).unwrap_throw())
                             }
 
                             let color_file_string = serde_json::to_string_pretty(&color_file).unwrap();
@@ -71,11 +69,11 @@ fn export_menu(palette: Mutable<Palette>, export_file_content: Mutable<Option<St
                             .text("Export to PNG")
                         })))
                         .on_click(clone!(palette, export_image_content => move |_| {
-                            let samples = palette.lock_mut().shades_per_color.get_cloned();
+                            let samples = palette.lock_mut().sampling_curves.clone();
                             let mut colors = vec![];
 
                             for color in palette.lock_mut().colors.lock_mut().iter() {
-                                let curve = color.samples(samples.clone());
+                                let curve = color.samples(&samples);
                                 colors.push(color.colors_u8(&curve));
                             }
 

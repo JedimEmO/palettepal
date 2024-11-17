@@ -1,52 +1,34 @@
-use futures_signals::signal::{Mutable};
+use futures_signals::signal_map::MutableBTreeMap;
 use futures_signals::signal_vec::MutableVec;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use crate::model::palette_color::PaletteColor;
+use crate::model::sampling_curve::SamplingCurve;
 
 pub const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
-pub const DWIND_CURVE: [(f32, f32); 11] = [
-    (0., 1.),
-    (0.2, 0.9),
-    (0.3, 0.8),
-    (0.4, 0.67),
-    (0.47, 0.57),
-    (0.55, 0.47),
-    (0.62, 0.4),
-    (0.7, 0.36),
-    (0.8, 0.3),
-    (0.9, 0.2),
-    (1., 0.),
-];
-
-pub const DWIND_CURVE2: [(f32, f32); 11] = [
-    (0., 1.),
-    (0.2, 0.95),
-    (0.3, 0.92),
-    (0.4, 0.86),
-    (0.47, 0.8),
-    (0.55, 0.72),
-    (0.62, 0.63),
-    (0.7, 0.53),
-    (0.8, 0.4),
-    (0.9, 0.2),
-    (1., 0.),
-];
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub enum ColorShades {
-    #[default]
-    Tailwind,
-    Custom(Vec<f32>),
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Palette {
-    pub shades_per_color: Mutable<ColorShades>,
     pub colors: MutableVec<PaletteColor>,
+    pub sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>
 }
 
 impl Palette {
+    pub fn new() -> Self {
+        let colors = MutableVec::new_with_values(vec![
+            PaletteColor::new(180.)
+        ]);
+
+        let sampling_curves = MutableBTreeMap::new();
+        sampling_curves.lock_mut().insert_cloned(Uuid::nil(), SamplingCurve::tailwind_happy());
+        sampling_curves.lock_mut().insert_cloned(Uuid::from_u128(1), SamplingCurve::tailwind_diagonal());
+
+        Self {
+            colors,
+            sampling_curves
+        }
+    }
+
     pub fn add_new_color(&self) {
         let new_color = PaletteColor::new((self.colors.lock_mut().len() as f32 * 26.).rem_euclid(360.));
         self.colors.lock_mut().push_cloned(new_color);
@@ -54,10 +36,9 @@ impl Palette {
 
     pub fn to_jasc_pal(&self) -> String {
         let mut palette = jascpal::Palette::new();
-        let shades = self.shades_per_color.get_cloned();
 
         for color in self.colors.lock_mut().iter() {
-            let curve = color.samples(shades.clone());
+            let curve = color.samples(&self.sampling_curves);
             let swatch = color.colors_u8(&curve);
 
             for (r, g, b) in swatch {

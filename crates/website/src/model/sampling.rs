@@ -124,18 +124,18 @@ impl SamplingRect {
 }
 
 
-pub fn colors_u8(hue: f32, sample_coords: &Vec<(f32, f32)>) -> Vec<(u8, u8, u8)> {
+pub fn colors_u8(hue: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
     let mut out_colors = vec![];
 
     for shade in sample_coords {
-        let color = hsv_to_rgb((hue as f64).clamp(0., 360.), shade.0 as f64, shade.1 as f64);
+        let color = hsv_to_rgb((hue as f64).clamp(0., 360.), shade.x as f64, shade.y as f64);
         out_colors.push(color);
     }
 
     out_colors
 }
 
-pub fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, points_signal: impl Signal<Item=Vec<(f32, f32)>> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
+pub fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, points_signal: impl Signal<Item=Vec<Vec2>> + 'static) -> impl Signal<Item=Vec<Vec2>> + 'static {
     map_ref! {
         let points = points_signal,
         let sampling_rect_matrices = sampling_rect_matrices_signal => {
@@ -144,46 +144,15 @@ pub fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat
     }
 }
 
-pub fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec<(f32, f32)>) -> Vec<(f32, f32)> {
+pub fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec<Vec2>) -> Vec<Vec2> {
     let mut points = vec![];
 
-    for (x, y) in input_points {
-        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.));
+    for point in input_points {
+        let point = Vec2::new(point.x.clamp(0., 1.), point.y.clamp(0., 1.));
         let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
         let point = mat.transform_point2(point);
 
-        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
-    }
-
-    points
-}
-
-pub fn sigmoid_sample_signal(amplification: Mutable<f32>, sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, sampling_x_coords_signal: impl Signal<Item=Vec<f32>> + 'static) -> impl Signal<Item=Vec<(f32, f32)>> + 'static {
-    map_ref! {
-        let sampling_rect_matrices = sampling_rect_matrices_signal,
-        let amplification = amplification.signal(),
-        let x_coords = sampling_x_coords_signal => {
-            sigmoid_sample(sampling_rect_matrices, amplification, x_coords.clone())
-        }
-    }
-}
-
-pub fn sigmoid_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), amplification: &f32, x_coords: Vec<f32>) -> Vec<(f32, f32)> {
-    let mut points = vec![];
-
-    for x in x_coords {
-        let x_samp = (x - 0.5) * amplification;
-        let y = 0.5 - algebraic_simple(x_samp as f64) * 1. / 2.;
-
-        let point = Vec2::new(x.clamp(0., 1.), y.clamp(0., 1.) as f32);
-        let mat = sampling_rect_matrices.0 * sampling_rect_matrices.1 * sampling_rect_matrices.2;
-        let point = mat.transform_point2(point);
-
-        points.push((point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
-    }
-
-    if *amplification < 0. {
-        points.reverse();
+        points.push(Vec2::new(point.x.clamp(0., 1.), point.y.clamp(0., 1.)));
     }
 
     points

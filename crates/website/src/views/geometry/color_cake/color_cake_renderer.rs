@@ -1,6 +1,7 @@
 use web_sys::WebGl2RenderingContext;
 use anyhow::anyhow;
 use futures_signals::signal::Mutable;
+use glam::Vec2;
 use crate::views::geometry::cylinder_geometry;
 use crate::views::geometry::shader_program::{GeometryIndex, ShaderProgram};
 use crate::views::geometry::transform::Transform;
@@ -8,7 +9,7 @@ use crate::views::geometry::transform::Transform;
 pub struct ColorCake {
     shader_program: ShaderProgram,
     transform: Transform,
-    sample_curve: Mutable<Vec<(f32, f32)>>,
+    sample_curve: Mutable<Vec<Vec2>>,
 }
 
 impl ColorCake {
@@ -57,7 +58,7 @@ impl ColorCake {
         &mut self,
         context: &WebGl2RenderingContext,
         hue: f32,
-        sample_points: Vec<(f32, f32)>,
+        sample_points: Vec<Vec2>,
     ) -> anyhow::Result<()> {
         self.sample_curve.set(sample_points.clone());
         let program = &self.shader_program.program;

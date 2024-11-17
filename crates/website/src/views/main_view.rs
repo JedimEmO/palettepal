@@ -1,29 +1,17 @@
-use crate::model::palette::{ColorShades, Palette};
+use crate::model::palette::{Palette};
 use crate::views::color_panel::color_panel;
 use dominator::Dom;
 use dwind::prelude::*;
 use futures_signals::signal::{always, Mutable, SignalExt};
-use futures_signals::signal_vec::{MutableVec, SignalVecExt};
+use futures_signals::signal_vec::{SignalVecExt};
 use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use crate::mixins::panel::panel_mixin;
-use crate::model::palette_color::PaletteColor;
-use crate::model::sampling::ColorSampler;
 use crate::views::palette_controls::palette_controls;
 use crate::widgets::menu_overlay::menu_overlay;
 
 pub fn main_view() -> Dom {
-    let palette = Mutable::new(Palette {
-        shades_per_color: Mutable::new(ColorShades::Tailwind),
-        colors: MutableVec::new_with_values(vec![
-            PaletteColor {
-                name: "default-color".to_string().into(),
-                hue: Default::default(),
-                sampling_rect: Default::default(),
-                sampler: Mutable::new(ColorSampler::DwindCurve),
-            }
-        ]),
-    });
+    let palette = Mutable::new(Palette::new());
 
     let export_file_content: Mutable<Option<String>> = Mutable::new(None);
     let export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>> = Mutable::new(None);
@@ -92,7 +80,7 @@ pub fn palette_view(palette: Mutable<Palette>, export_file_content: Mutable<Opti
                     })
                 }))
                 .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
-                    color_panel(color, palette.shades_per_color.read_only())
+                    color_panel(color, palette.sampling_curves.clone())
                 })))
             }))
         }))

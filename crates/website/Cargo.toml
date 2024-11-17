@@ -32,3 +32,4 @@ web-sys.workspace = true
 log.workspace = true
 serde = { version = "1.0.214", features = ["derive"] }
 url = "2.5.3"
+uuid.workspace = true

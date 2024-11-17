@@ -6,14 +6,16 @@ use crate::widgets::shader_canvas::*;
 use dominator::{events, Dom};
 use dwind::prelude::*;
 use futures_signals::map_ref;
-use futures_signals::signal::{Mutable, ReadOnlyMutable, SignalExt};
+use futures_signals::signal::{Mutable, SignalExt};
 use glam::{Vec2, Vec3};
 use std::rc::Rc;
+use futures_signals::signal_map::MutableBTreeMap;
+use uuid::Uuid;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, WebGl2RenderingContext};
 use transform::{Transform, AABB};
-use crate::model::palette::ColorShades;
 use crate::model::palette_color::PaletteColor;
+use crate::model::sampling_curve::SamplingCurve;
 use crate::views::geometry::color_cake_renderer::ColorCake;
 use crate::views::geometry::transform::Plane;
 
@@ -33,26 +35,26 @@ enum Cursor {
 pub fn color_cake(
     hue: Mutable<f32>,
     color: PaletteColor,
-    shades_per_color: ReadOnlyMutable<ColorShades>,
+    sampling_curves: &MutableBTreeMap<Uuid, SamplingCurve>,
     resolution: (i32, i32),
 ) -> Dom {
-    let sample_points = color.samples_signal(shades_per_color.signal_cloned());
+    let sample_points = color.samples_signal(sampling_curves.clone());
 
-    fn get_curve_aabb(curve: &Vec<(f32, f32)>) -> AABB {
+    fn get_curve_aabb(curve: &Vec<Vec2>) -> AABB {
         let mut min = Vec2::splat(f32::INFINITY);
         let mut max = Vec2::splat(f32::NEG_INFINITY);
 
         for point in curve.iter() {
-            min.x = min.x.min(point.0);
-            min.y = min.y.min(point.1);
-            max.x = max.x.max(point.0);
-            max.y = max.y.max(point.1);
+            min.x = min.x.min(point.x);
+            min.y = min.y.min(point.y);
+            max.x = max.x.max(point.x);
+            max.y = max.y.max(point.y);
         }
 
         AABB::new(min.x, min.y, max.x, max.y)
     }
 
-    let sample_curve_bb_signal = color.samples_signal(shades_per_color.signal_cloned()).map(|s| {
+    let sample_curve_bb_signal = color.samples_signal(sampling_curves.clone()).map(|s| {
         if s.is_empty() {
             return None;
         }
@@ -60,9 +62,9 @@ pub fn color_cake(
         Some(get_curve_aabb(&s))
     });
 
-    let sample_curve_world_pos_signal = color.samples_signal(shades_per_color.signal_cloned()).map(|s| {
-        s.into_iter().map(|(x, y)| {
-            Vec2::new(x, 2. * y - 1.)
+    let sample_curve_world_pos_signal = color.samples_signal(sampling_curves.clone()).map(|s| {
+        s.into_iter().map(|pos| {
+            Vec2::new(pos.x, 2. * pos.y - 1.)
         }).collect::<Vec<_>>()
     });
 
