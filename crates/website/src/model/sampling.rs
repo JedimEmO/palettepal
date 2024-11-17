@@ -80,10 +80,10 @@ pub struct SamplingRect {
 impl Default for SamplingRect {
     fn default() -> Self {
         Self {
-            x: Mutable::new(0.),
-            y: Mutable::new(0.),
-            width: Mutable::new(1.),
-            height: Mutable::new(1.),
+            x: Mutable::new(0.13),
+            y: Mutable::new(0.13),
+            width: Mutable::new(0.75),
+            height: Mutable::new(0.75),
             rotation: Mutable::new(0.),
         }
     }

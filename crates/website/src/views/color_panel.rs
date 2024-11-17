@@ -160,7 +160,7 @@ fn horizontal_color_bar(shades_signal: impl Signal<Item=Vec<(u8, u8, u8)>> + 'st
             let color = format!("rgb({}, {}, {})", shade.0, shade.1, shade.2);
 
             html!("div", {
-                .dwclass!("@sm:aspect-video @<sm:aspect-square flex-1")
+                .dwclass!("@sm:aspect-video @<sm:aspect-square flex-1 max-h-12")
                 .style("background-color", color)
             })
         }))

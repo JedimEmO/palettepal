@@ -153,7 +153,25 @@ pub fn color_cake(
                     let corner = get_hovered_drag_point(Vec2::new(x, y));
 
                     dragging_corner.set(corner);
-                })).event(clone!(dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::TouchStart| {
+                })).event(clone!(color, dragging_corner, get_hovered_drag_point => move |event: events::DoubleClick| {
+                    let x = 512. * event.offset_x() as f32 / 128.;
+                    let y = 512. * event.offset_y() as f32 / 128.;
+                    let corner = get_hovered_drag_point(Vec2::new(x, y));
+
+                    match corner {
+                        Some(DragPoint::Center) => {
+                            let rect = color.sampling_rect.lock_mut();
+
+                            rect.x.set(0.);
+                            rect.y.set(0.);
+                            rect.width.set(1.);
+                            rect.height.set(1.);
+                            rect.rotation.set(0.);
+                        }
+                        _ => {}
+                    }
+                }))
+                .event(clone!(dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::TouchStart| {
                     let rect = event.target().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().get_bounding_client_rect();
                     let x = 512. * (event.touches().next().unwrap().client_x() as f32 - rect.x() as f32) / 128.;
                     let y = 512. * (event.touches().next().unwrap().client_y() as f32 - rect.y() as f32) / 128.;

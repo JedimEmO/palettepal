@@ -29,6 +29,14 @@ impl Palette {
         }
     }
 
+    pub fn add_new_curve(&self) -> Uuid {
+        let id = Uuid::new_v4();
+        let new_curve = SamplingCurve::new();
+        self.sampling_curves.lock_mut().insert_cloned(id, new_curve);
+
+        id
+    }
+
     pub fn add_new_color(&self) {
         let new_color = PaletteColor::new((self.colors.lock_mut().len() as f32 * 26.).rem_euclid(360.));
         self.colors.lock_mut().push_cloned(new_color);
