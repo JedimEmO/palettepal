@@ -1,9 +1,11 @@
 use web_sys::WebGl2RenderingContext;
 use anyhow::anyhow;
 use futures_signals::signal::Mutable;
-use glam::Vec2;
-use crate::model::palette_color::ColorSpace;
+use glam::{Mat4, Vec2};
+use crate::model::palette_color::{CakeType, ColorSpace};
+use crate::views::geometry::color_cake::brick_geometry::brick_triangles;
 use crate::views::geometry::cylinder_geometry;
+use crate::views::geometry::cylinder_geometry::make_cylinder;
 use crate::views::geometry::shader_program::{GeometryIndex, ShaderProgram};
 use crate::views::geometry::transform::Transform;
 
@@ -15,9 +17,9 @@ pub struct ColorCake {
 
 impl ColorCake {
     pub fn new(context: &WebGl2RenderingContext) -> anyhow::Result<Self> {
-        let mut sides = cylinder_geometry::cylinder_sides();
-        let mut top_disk = cylinder_geometry::cylinder_top(true);
-        let mut bottom_disk = cylinder_geometry::cylinder_top(false);
+        let mut sides = cylinder_geometry::cylinder_sides(0.);
+        let mut top_disk = cylinder_geometry::cylinder_top(true, 0.);
+        let mut bottom_disk = cylinder_geometry::cylinder_top(false, 0.);
 
         let mut geometries = vec![];
 
@@ -61,6 +63,8 @@ impl ColorCake {
         hue: f32,
         color_space: ColorSpace,
         sample_points: Vec<Vec2>,
+        cake_type: CakeType,
+        plane_angle: f32
     ) -> anyhow::Result<()> {
         self.sample_curve.set(sample_points.clone());
         let program = &self.shader_program.program;
@@ -79,10 +83,19 @@ impl ColorCake {
 
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
 
+        let mut vertices = match cake_type {
+            CakeType::Cylinder => {
+                make_cylinder(plane_angle.to_radians())
+            }
+            CakeType::Brick => {
+                brick_triangles(plane_angle.to_radians())
+            }
+        };
+
         unsafe {
             let data_view = js_sys::Float32Array::view_mut_raw(
-                (&mut self.shader_program.vertices).as_mut_ptr() as *mut f32,
-                self.shader_program.vertices.len() * 6,
+                (&mut vertices).as_mut_ptr() as *mut f32,
+                vertices.len() * 6,
             );
 
             context.buffer_data_with_array_buffer_view(
@@ -119,15 +132,20 @@ impl ColorCake {
         context.enable_vertex_attrib_array(position_location as u32);
         context.enable_vertex_attrib_array(color_location as u32);
 
-        let scale = self.transform.scale;
-
-        let view_matrix = self.transform.projection;
-
-        let matrix = scale * view_matrix;
         let color_space = match color_space {
             ColorSpace::HSV => 0,
             ColorSpace::HSL => 1
         };
+
+
+        let scale = self.transform.scale;
+        let view_matrix = self.transform.projection;
+
+        let mut matrix = scale * view_matrix;
+
+        if cake_type == CakeType::Brick {
+            matrix = matrix * Mat4::from_rotation_y(45.);
+        }
 
         WebGl2RenderingContext::uniform1f(&context, hue_location.as_ref(), hue);
         WebGl2RenderingContext::uniform1i(&context, space_location.as_ref(), color_space);
@@ -143,17 +161,11 @@ impl ColorCake {
         context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
         context.clear_depth(0.);
 
-        for geometry in self.shader_program.geometries.iter() {
-            match geometry {
-                GeometryIndex::Triangles { start_index, count } => {
-                    context.draw_arrays(
-                        WebGl2RenderingContext::TRIANGLES,
-                        *start_index as i32,
-                        *count as i32,
-                    );
-                }
-            }
-        }
+        context.draw_arrays(
+            WebGl2RenderingContext::TRIANGLES,
+            0,
+            vertices.len() as i32,
+        );
 
         Ok(())
     }

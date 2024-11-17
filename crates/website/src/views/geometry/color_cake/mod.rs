@@ -1,20 +1,21 @@
 pub mod transform;
 pub mod cylinder_geometry;
 pub mod color_cake_renderer;
+pub mod brick_geometry;
 
 use crate::widgets::shader_canvas::*;
 use dominator::{events, Dom};
 use dwind::prelude::*;
 use futures_signals::map_ref;
 use futures_signals::signal::{Mutable, SignalExt};
-use glam::{Vec2, Vec3};
+use glam::{Mat4, Vec2, Vec3};
 use std::rc::Rc;
 use futures_signals::signal_map::MutableBTreeMap;
 use uuid::Uuid;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, WebGl2RenderingContext};
 use transform::{Transform, AABB};
-use crate::model::palette_color::PaletteColor;
+use crate::model::palette_color::{CakeType, PaletteColor};
 use crate::model::sampling_curve::SamplingCurve;
 use crate::views::geometry::color_cake_renderer::ColorCake;
 use crate::views::geometry::transform::Plane;
@@ -75,6 +76,8 @@ pub fn color_cake(
         }
     };
 
+    let cake_type_signal = color.cake_type.signal();
+
     let cake = shader_canvas!({
         .apply(|b| {
             dwclass!(b, "w-32 h-32 grid-col-1 grid-row-1")
@@ -91,15 +94,17 @@ pub fn color_cake(
                 let draw_data_signal = map_ref! {
                     let hue = hue.signal(),
                     let space = color.color_space.signal(),
+                    let color_plane_angle = color.color_plane_angle.signal(),
+                    let cake_type = color.cake_type.signal(),
                     let samples = sample_points => {
-                        (*hue, *space, samples.clone())
+                        (*hue, *space, samples.clone(), *cake_type, *color_plane_angle)
                     }
                 };
 
-                draw_data_signal.for_each(move |(hue, color_space, samples)| {
+                draw_data_signal.for_each(move |(hue, color_space, samples, cake_type, color_plane_angle)| {
                     let hue = hue / 360.;
 
-                    let _ = color_cake.draw(&context, hue, color_space, samples.clone()).inspect_err(|e| {
+                    let _ = color_cake.draw(&context, hue, color_space, samples.clone(), cake_type, color_plane_angle).inspect_err(|e| {
                         error!("failed to draw color cake: {:?}", e);
                     });
 
@@ -143,7 +148,7 @@ pub fn color_cake(
                     }
                 }));
 
-                let b = b.event(clone!(dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::MouseDown| {
+                let b = b.event(clone!(transform, dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::MouseDown| {
                     let x = 512. * event.offset_x() as f32 / 128.;
                     let y = 512. * event.offset_y() as f32 / 128.;
 
@@ -172,7 +177,7 @@ pub fn color_cake(
                         _ => {}
                     }
                 }))
-                .event(clone!(dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::TouchStart| {
+                .event(clone!(transform, dragging_corner, prev_drag_point, get_hovered_drag_point => move |event: events::TouchStart| {
                     let rect = event.target().unwrap().dyn_into::<HtmlCanvasElement>().unwrap().get_bounding_client_rect();
                     let x = 512. * (event.touches().next().unwrap().client_x() as f32 - rect.x() as f32) / 128.;
                     let y = 512. * (event.touches().next().unwrap().client_y() as f32 - rect.y() as f32) / 128.;
@@ -190,7 +195,7 @@ pub fn color_cake(
                     dragging_corner.set(None);
                 }));
 
-                let move_event_handler = Rc::new(clone!(dragging_corner, hover_cursor => move |pos: Vec2| {
+                let move_event_handler = Rc::new(clone!(dragging_corner, hover_cursor, transform => move |pos: Vec2| {
                     if let Some(hovered) = get_hovered_drag_point(pos) {
                         match hovered {
                             DragPoint::Center => {
@@ -257,6 +262,16 @@ pub fn color_cake(
                         Some(Cursor::Move) => { "move" }
                         _ => { "default" }
                     }
+                })).future(clone!(transform => async move {
+                    cake_type_signal.for_each(clone!(transform => move |cake_type| {
+                        let rot_mat = match cake_type {
+                            CakeType::Brick => Mat4::from_rotation_y(45.),
+                            _ => Mat4::IDENTITY
+                        };
+
+                        transform.dynamic_mat.set(rot_mat);
+                        async move {}
+                    })).await;
                 }));
 
                 b.future(async move {

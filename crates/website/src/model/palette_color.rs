@@ -76,6 +76,8 @@ pub struct PaletteColor {
     pub color_space: Mutable<ColorSpace>,
     pub sampling_rect: Mutable<SamplingRect>,
     pub sampling_curve_id: Mutable<Uuid>,
+    pub cake_type: Mutable<CakeType>,
+    pub color_plane_angle: Mutable<f32>
 }
 
 impl PaletteColor {
@@ -86,6 +88,8 @@ impl PaletteColor {
             color_space: Default::default(),
             sampling_rect: Default::default(),
             sampling_curve_id: Uuid::nil().into(),
+            cake_type: Default::default(),
+            color_plane_angle: Default::default(),
         }
     }
 
@@ -127,10 +131,11 @@ impl PaletteColor {
         map_ref! {
             let shades = self.samples_signal(sampling_curves.clone()),
             let space = self.color_space.signal(),
+            let angle = self.color_plane_angle.signal(),
             let hue = self.hue.signal() => {
                 match space {
-                    ColorSpace::HSL => hsl_colors_u8(*hue, shades),
-                    ColorSpace::HSV => hsv_colors_u8(*hue, shades),
+                    ColorSpace::HSL => hsl_colors_u8(*hue, *angle, shades),
+                    ColorSpace::HSV => hsv_colors_u8(*hue, *angle, shades),
                 }
             }
         }
@@ -141,8 +146,8 @@ impl PaletteColor {
         sample_coords: &Vec<Vec2>,
     ) -> Vec<(u8, u8, u8)> {
         match self.color_space.get() {
-            ColorSpace::HSL => hsl_colors_u8(self.hue.get(), sample_coords),
-            ColorSpace::HSV => hsv_colors_u8(self.hue.get(), sample_coords),
+            ColorSpace::HSL => hsl_colors_u8(self.hue.get(), self.color_plane_angle.get(), sample_coords),
+            ColorSpace::HSV => hsv_colors_u8(self.hue.get(), self.color_plane_angle.get(), sample_coords),
         }
     }
 }
@@ -164,5 +169,38 @@ impl PaletteColor {
             name: self.name.get_cloned(),
             shades,
         })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
+pub enum CakeType {
+    Cylinder,
+    Brick,
+}
+
+impl Default for CakeType {
+    fn default() -> Self {
+        Self::Cylinder
+    }
+}
+
+impl Display for CakeType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CakeType::Cylinder => write!(f, "Cylinder"),
+            CakeType::Brick => write!(f, "Brick"),
+        }
+    }
+}
+
+impl FromStr for CakeType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Cylinder" => Ok(Self::Cylinder),
+            "Brick" => Ok(Self::Brick),
+            _ => Err(())
+        }
     }
 }

@@ -1,9 +1,22 @@
 use std::f32::consts::PI;
 use crate::views::geometry::shader_program::ColorSpaceVertex;
 
-pub fn cylinder_top(top: bool) -> Vec<ColorSpaceVertex> {
+pub fn make_cylinder(angle: f32) -> Vec<ColorSpaceVertex> {
+    let mut out = vec![];
+
+    let mut top = cylinder_top(true, angle);
+    let mut sides = cylinder_sides(angle);
+
+    out.append(&mut top);
+    out.append(&mut sides);
+
+    out
+}
+
+pub fn cylinder_top(top: bool, angle_offset: f32) -> Vec<ColorSpaceVertex> {
     let y = if top { 1. } else { -1. };
     let l = (y + 1.) / 2.;
+    let angle_offset = if top { angle_offset } else { 0. };
 
     let mut out = vec![];
 
@@ -16,8 +29,8 @@ pub fn cylinder_top(top: bool) -> Vec<ColorSpaceVertex> {
         let angle = start_angle - (sector as f32 * slice_radius);
         let next_angle = start_angle - ((sector + 1) as f32 * slice_radius);
 
-        let h = angle / (2. * PI) / pct;
-        let next_h = next_angle / (2. * PI) / pct;
+        let h = (angle + angle_offset) / (2. * PI) / pct;
+        let next_h = (next_angle + angle_offset) / (2. * PI) / pct;
 
         let x = angle.cos() * 1.;
         let z = angle.sin() * 1.;
@@ -43,7 +56,7 @@ pub fn cylinder_top(top: bool) -> Vec<ColorSpaceVertex> {
     out
 }
 
-pub fn cylinder_sides() -> Vec<ColorSpaceVertex> {
+pub fn cylinder_sides(angle_offset: f32) -> Vec<ColorSpaceVertex> {
     let mut out = vec![];
 
     let num_verts = 32;
@@ -51,12 +64,16 @@ pub fn cylinder_sides() -> Vec<ColorSpaceVertex> {
     let start_angle = 3. * PI / 2.;
     let pct = start_angle / (PI * 2.);
 
+    let slice_h_top = angle_offset.sin();
+
     for sector in 0..num_verts {
         let angle = start_angle - (sector as f32 * slice_radius);
         let next_angle = start_angle - ((sector + 1) as f32 * slice_radius);
 
         let h = angle / (2. * PI) / pct;
+        let h_top = (angle + angle_offset) / (2. * PI) / pct;
         let next_h = next_angle / (2. * PI) / pct;
+        let next_h_top = (next_angle + angle_offset) / (2. * PI) / pct;
 
         let x = angle.cos() * 1.;
         let z = angle.sin() * 1.;
@@ -68,7 +85,7 @@ pub fn cylinder_sides() -> Vec<ColorSpaceVertex> {
         //A
         out.push(ColorSpaceVertex {
             pos: [x, 1., z],
-            hsx: [h, 1., 1.0],
+            hsx: [h_top, 1., 1.0],
         });
 
         out.push(ColorSpaceVertex {
@@ -89,12 +106,12 @@ pub fn cylinder_sides() -> Vec<ColorSpaceVertex> {
 
         out.push(ColorSpaceVertex {
             pos: [x, 1., z],
-            hsx: [h, 1., 1.0],
+            hsx: [h_top, 1., 1.0],
         });
 
         out.push(ColorSpaceVertex {
             pos: [next_x, 1., next_z],
-            hsx: [next_h, 1., 1.0],
+            hsx: [next_h_top, 1., 1.0],
         });
     }
 
@@ -102,12 +119,12 @@ pub fn cylinder_sides() -> Vec<ColorSpaceVertex> {
     // A
     out.push(ColorSpaceVertex {
         pos: [1., 1., 0.],
-        hsx: [0., 1., 1.],
+        hsx: [slice_h_top, 1., 1.],
     });
 
     out.push(ColorSpaceVertex {
         pos: [0., 1., 0.],
-        hsx: [0., 0., 1.],
+        hsx: [slice_h_top, 0., 1.],
     });
 
     out.push(ColorSpaceVertex {
@@ -118,7 +135,7 @@ pub fn cylinder_sides() -> Vec<ColorSpaceVertex> {
     // B
     out.push(ColorSpaceVertex {
         pos: [1., 1., 0.],
-        hsx: [0., 1., 1.],
+        hsx: [slice_h_top, 1., 1.],
     });
 
     out.push(ColorSpaceVertex {
