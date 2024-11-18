@@ -119,8 +119,8 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                         }),
                         slider!({
                             .label("Color plane angle".to_string())
-                            .max(180.0_f32)
-                            .min(-180.0_f32)
+                            .max(360.0_f32)
+                            .min(-360.0_f32)
                             .step(0.5)
                             .value(color.color_plane_angle.clone())
                         }),
