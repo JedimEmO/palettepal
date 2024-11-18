@@ -29,8 +29,8 @@ pub fn cylinder_top(top: bool, angle_offset: f32) -> Vec<ColorSpaceVertex> {
         let angle = start_angle - (sector as f32 * slice_radius);
         let next_angle = start_angle - ((sector + 1) as f32 * slice_radius);
 
-        let h = (angle + angle_offset) / (2. * PI) / pct;
-        let next_h = (next_angle + angle_offset) / (2. * PI) / pct;
+        let h = (angle - angle_offset) / (2. * PI) / pct;
+        let next_h = (next_angle - angle_offset) / (2. * PI) / pct;
 
         let x = angle.cos() * 1.;
         let z = angle.sin() * 1.;
@@ -64,16 +64,16 @@ pub fn cylinder_sides(angle_offset: f32) -> Vec<ColorSpaceVertex> {
     let start_angle = 3. * PI / 2.;
     let pct = start_angle / (PI * 2.);
 
-    let slice_h_top = angle_offset.sin();
+    let slice_h_top = -angle_offset / (2. * PI);
 
     for sector in 0..num_verts {
         let angle = start_angle - (sector as f32 * slice_radius);
         let next_angle = start_angle - ((sector + 1) as f32 * slice_radius);
 
         let h = angle / (2. * PI) / pct;
-        let h_top = (angle + angle_offset) / (2. * PI) / pct;
+        let h_top = (angle - angle_offset) / (2. * PI) / pct;
         let next_h = next_angle / (2. * PI) / pct;
-        let next_h_top = (next_angle + angle_offset) / (2. * PI) / pct;
+        let next_h_top = (next_angle - angle_offset) / (2. * PI) / pct;
 
         let x = angle.cos() * 1.;
         let z = angle.sin() * 1.;

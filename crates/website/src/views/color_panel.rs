@@ -117,18 +117,10 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                                 ("HSL".to_string(), "HSL".to_string()),
                             ])
                         }),
-                        select!({
-                            .label("Cake Type".to_string())
-                            .value(color.cake_type.clone())
-                            .options(vec![
-                                ("Cylinder".to_string(), "Cylinder".to_string()),
-                                ("Brick".to_string(), "Brick".to_string()),
-                            ])
-                        }),
                         slider!({
                             .label("Color plane angle".to_string())
-                            .max(90.0_f32)
-                            .min(-90.0_f32)
+                            .max(180.0_f32)
+                            .min(-180.0_f32)
                             .step(0.5)
                             .value(color.color_plane_angle.clone())
                         }),

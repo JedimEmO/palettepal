@@ -130,8 +130,8 @@ pub fn hsv_colors_u8(hue: f32, angle: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8
 
     for shade in sample_coords {
         // Shift the hue based on the color plane angle
-        let color_hue = hue + (angle.to_radians().sin() * shade.y) * 360. / 2. * PI;
-        let color = hsv_to_rgb((color_hue as f64).rem_euclid( 360.), shade.x as f64, shade.y as f64);
+        let color_hue = (hue - angle * shade.y).rem_euclid( 360.);
+        let color = hsv_to_rgb(color_hue as f64, shade.x as f64, shade.y as f64);
         out_colors.push(color);
     }
 
@@ -143,7 +143,7 @@ pub fn hsl_colors_u8(hue: f32, angle: f32,  sample_coords: &Vec<Vec2>) -> Vec<(u
 
     for shade in sample_coords {
         // Shift the hue based on the color plane angle
-        let color_hue = hue + (angle.to_radians().sin() * shade.y) * 360. / 2. * PI;
+        let color_hue = hue - angle * shade.y;
         let color = hsl::HSL { h: (color_hue as f64).rem_euclid(360.), s: shade.x as f64, l: shade.y as f64 }.to_rgb();
         out_colors.push(color);
     }
