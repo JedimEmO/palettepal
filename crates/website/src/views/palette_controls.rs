@@ -32,15 +32,26 @@ pub fn palette_controls(vm: PalettePalViewModel) -> Dom {
 }
 
 fn project_menu(vm: PalettePalViewModel) -> Dom {
-    let PalettePalViewModel { palette, .. } = vm;
+    let PalettePalViewModel { palette, show_sampling_curve_editor, .. } = vm;
 
     application_menu("Project", clone!(palette => move || {
         html!("div", {
-            .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
-            .text("Add Color")
-            .event(clone!(palette => move |_: events::Click| {
-                palette.lock_mut().add_new_color();
-            }))
+            .children([
+                html!("div", {
+                    .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
+                    .text("Add Color")
+                    .event(clone!(palette => move |_: events::Click| {
+                        palette.lock_mut().add_new_color();
+                    }))
+                }),
+                html!("div", {
+                    .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
+                    .text("Edit sampling curves")
+                    .event(clone!(show_sampling_curve_editor => move |_: events::Click| {
+                        show_sampling_curve_editor.set(!show_sampling_curve_editor.get());
+                    }))
+                })
+            ])
         })
     }))
 }
@@ -71,7 +82,7 @@ fn application_menu(label: &str, mut content_factory: impl FnMut() -> Dom + 'sta
 }
 
 fn export_menu(vm: PalettePalViewModel) -> Dom {
-    let PalettePalViewModel { palette, export_file_content, export_image_content } = vm;
+    let PalettePalViewModel { palette, export_file_content, export_image_content , ..} = vm;
 
     application_menu("Export", move || {
         html!("div", {

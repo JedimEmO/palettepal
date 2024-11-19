@@ -29,7 +29,7 @@ async fn main() {
     dwui::theme::apply_style_sheet(Some(ColorsCssVariables::new(
         &DWIND_COLORS["picton-blue"],
         &DWIND_COLORS["woodsmoke"],
-        &DWIND_COLORS["picton-blue"],
+        &DWIND_COLORS["woodsmoke"],
         &DWIND_COLORS["red"],
     )));
     stylesheet!(["body"], {

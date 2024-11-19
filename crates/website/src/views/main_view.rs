@@ -14,9 +14,10 @@ use crate::widgets::menu_overlay::menu_overlay;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PalettePalViewModel {
+    pub show_sampling_curve_editor: Mutable<bool>,
     pub palette: Mutable<Palette>,
     pub export_file_content: Mutable<Option<String>>,
-    pub export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>>
+    pub export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>>,
 }
 
 pub fn main_view() -> Dom {
@@ -26,9 +27,10 @@ pub fn main_view() -> Dom {
     let export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>> = Mutable::new(None);
 
     let vm = PalettePalViewModel {
+        show_sampling_curve_editor: Default::default(),
         palette,
         export_file_content,
-        export_image_content
+        export_image_content,
     };
 
     let inner = menu_overlay(
@@ -100,7 +102,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                         })
                     })
                 }))
-                .child(sampling_curve_editor(vm.clone()))
+                .child_signal(vm.show_sampling_curve_editor.signal().map(clone!(vm => move |v| if v { Some(sampling_curve_editor(vm.clone())) } else { None })))
                 .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
                     color_panel(color, palette.sampling_curves.clone())
                 })))

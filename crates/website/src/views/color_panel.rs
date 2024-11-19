@@ -13,11 +13,13 @@ use uuid::Uuid;
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette_color::PaletteColor;
 use crate::model::sampling_curve::SamplingCurve;
+use crate::views::svg_icons::{svg_button, Icons};
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
 pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>) -> Dom {
     let hue: Mutable<f32> = color.hue.clone();
+    let hue2: Mutable<f32> = color.hue.clone();
 
     let shades_signal = color.colors_u8_signal(&sampling_curves);
     let show_advanced = Mutable::new(false);
@@ -29,9 +31,16 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                 None
             } else {
                 Some(html!("div", {
-                    .dwclass!("flex flex-col gap-2 m-t-8")
+                    .dwclass!("flex @sm:flex-row @<sm:flex-col gap-2 m-t-8 justify-center")
                     .child(html!("div", {
-                        .dwclass!("flex flex-col gap-1")
+                        .dwclass!("flex flex-col gap-1 w-72")
+                        .child(text_input!({
+                            .label("Hex hue".to_string())
+                            .value(HueHexWrapper(hue2.clone()))
+                        }))
+                    }))
+                    .child(html!("div", {
+                        .dwclass!("flex flex-col gap-1 w-72")
                         .children([
                             slider!({
                                 .label("X".to_string())
@@ -81,6 +90,7 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
         .child(html!("div", {
             .dwclass!("grid")
             .child(html!("div", {
+                .dwclass!("grid-col-1 grid-row-1")
                 .dwclass!("flex w-full @sm:flex-row @<sm:flex-col @sm:align-items-start justify-center @<sm:align-items-center gap-4")
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
@@ -126,47 +136,36 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                         }),
                     ])
                 }))
+            }))
+            .child(html!("div", {
+                .dwclass!("grid-col-1 grid-row-1 flex justify-end pointer-events-none")
                 .child(html!("div", {
-                    .dwclass!("flex flex-col gap-2")
+                    .dwclass!("pointer-events-auto flex flex-col")
                     .children([
-                        button!({
-                            .content(Some(html!("div", {
-                                .dwclass!("p-l-2 p-r-2")
-                                .text("Copy Shape")
-                            })))
-                            .on_click(clone!(color => move |_| {
-                                COPIED_COLOR.set(Some(color.clone()));
-                            }))
-                        }),
-                        button!({
-                            .content(Some(html!("div", {
-                                .dwclass!("p-l-2 p-r-2")
-                                .text("Paste")
-                            })))
-                            .disabled_signal(COPIED_COLOR.signal_cloned().map(|v| v.is_none()))
-                            .on_click(clone!(color => move |_| {
-                                let Some(copied) = COPIED_COLOR.get_cloned() else {
-                                    return;
-                                };
+                        svg_button(Icons::Copy, "Copy color settings", clone!(color => move |_| {
+                            COPIED_COLOR.set(Some(color.clone()));
+                        }), |b| b),
+                        svg_button(Icons::Paste, "Paste color settings", clone!(color => move |_| {
+                            let Some(copied) = COPIED_COLOR.get_cloned() else {
+                                return;
+                            };
 
-                                color.sampling_curve_id.set(copied.sampling_curve_id.get());
-                                color.color_space.set(copied.color_space.get());
-                                color.sampling_rect.set(serde_json::from_str(&serde_json::to_string(&copied.sampling_rect.get_cloned()).unwrap()).unwrap());
-                            }))
+                            color.sampling_curve_id.set(copied.sampling_curve_id.get());
+                            color.color_space.set(copied.color_space.get());
+                            color.sampling_rect.set(serde_json::from_str(&serde_json::to_string(&copied.sampling_rect.get_cloned()).unwrap()).unwrap());
+                        }), |b| {
+                            dwclass_signal!(b, "fill-woodsmoke-500", COPIED_COLOR.signal_cloned().map(|v| v.is_none()))
                         }),
-                        button!({
-                            .content(Some(html!("div", { .dwclass!("p-l-2 p-r-2") .text("Advanced Settings")})))
-                            .on_click(move |_| {
+                        svg_button(Icons::Edit, "Advanced settings", move |_| {
                                 show_advanced.set(!show_advanced.get())
-                            })
-                        })
+                        },|b| b)
                     ])
                 }))
             }))
             .child(horizontal_color_bar(shades_signal))
             .child_signal(advanced_settings)
         }))
-    })
+})
 }
 
 fn horizontal_color_bar(shades_signal: impl Signal<Item=Vec<(u8, u8, u8)>> + 'static) -> Dom {
@@ -181,4 +180,28 @@ fn horizontal_color_bar(shades_signal: impl Signal<Item=Vec<(u8, u8, u8)>> + 'st
             })
         }))
     })
+}
+
+struct HueHexWrapper(Mutable<f32>);
+
+impl InputValueWrapper for HueHexWrapper {
+    fn set(&self, value: String) -> ValidationResult {
+        let Ok(hex) = hex_color::HexColor::parse(&value) else {
+            return ValidationResult::Invalid { message: "Invalid hex color".to_string() };
+        };
+
+        let hsl = hsl::HSL::from_rgb(&[hex.r, hex.g, hex.b]);
+
+        self.0.set(hsl.h as f32);
+
+        ValidationResult::Valid
+    }
+
+    fn value_signal_cloned(&self) -> impl Signal<Item=String> + 'static {
+        self.0.signal_cloned().map(|h| {
+            let hsl = hsl::HSL { h: h as f64, s: 1., l: 0.5 };
+            let rgb = hsl.to_rgb();
+            format!("#{:02x}{:02x}{:02x}", rgb.0, rgb.1, rgb.2)
+        })
+    }
 }

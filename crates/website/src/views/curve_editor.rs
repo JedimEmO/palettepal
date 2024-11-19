@@ -7,14 +7,11 @@ use futures_signals::signal_vec::SignalVecExt;
 use crate::mixins::panel::panel_mixin;
 use dwind::prelude::*;
 use dwui::prelude::InputValueWrapper;
-use futures_signals::map_ref;
 use futures_signals::signal_map::SignalMapExt;
 use glam::Vec2;
 use crate::mixins::observe_size::observe_size_mixin;
 use crate::model::palette::Palette;
-use std::borrow::BorrowMut;
 use dominator::events::MouseButton;
-use web_sys::console::info;
 use crate::model::sampling_curve::Modifiers;
 
 pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
@@ -30,7 +27,7 @@ pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
 
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("flex flex-row")
+        .dwclass!("flex flex-row divide-x")
         // Curve selector
         .child(html!("div", {
             .dwclass!("w-40 flex flex-col")
@@ -72,7 +69,7 @@ fn curve_editor(palette: Palette, current_curve_id: ReadOnlyMutable<Uuid>) -> Do
     let dragging_idx: Mutable<Option<usize>> = Mutable::new(None);
 
     html!("div", {
-        .dwclass!("bg-picton-blue-500 flex-1 aspect-square max-w-80")
+        .dwclass!("bg-picton-blue-500 aspect-square max-w-80")
         .apply(observe_size_mixin(rect_size.clone()))
         .child(svg!("svg", {
             .attr("viewBox", "0 0 512, 512")
