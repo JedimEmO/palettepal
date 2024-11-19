@@ -10,6 +10,7 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use crate::mixins::panel::panel_mixin;
 use crate::views::curve_editor::sampling_curve_editor;
 use crate::views::palette_controls::palette_controls;
+use crate::views::palette_overview::palette_overview;
 use crate::widgets::menu_overlay::menu_overlay;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -50,6 +51,7 @@ pub fn main_view() -> Dom {
 pub fn palette_view(vm: PalettePalViewModel) -> Dom {
     html!("div", {
         .dwclass!("flex flex-col gap-4 justify-center m-t-16")
+        .child(palette_overview(vm.clone()))
         .child_signal(vm.palette.signal_ref(clone!(vm => move |palette| {
             Some(html!("div", {
                 .dwclass!("flex flex-col gap-4 ")

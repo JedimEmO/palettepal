@@ -18,7 +18,8 @@ dwind-macros.workspace = true
 futures-signals.workspace = true
 futures-signals-component-macro = { version = "0.3.0", features = ["dominator"] }
 glam.workspace = true
-gloo-file = { version = "0.3.0", features = ["futures"] }
+gloo-file.workspace = true
+gloo-timers.workspace = true
 hex_color = "3.0.0"
 hsv = "0.1.1"
 hsl = "0.1.1"

@@ -16,6 +16,8 @@ dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "8484de9b3
 futures = "0.3.30"
 futures-signals = "0.3.34"
 glam = { version = "0.29.2", features = ["serde"] }
+gloo-file = { version = "0.3.0", features = ["futures"] }
+gloo-timers = { version = "0.3.0", features = ["futures"] }
 js-sys = "0.3.70"
 log = "0.4.22"
 serde = "1.0.214"

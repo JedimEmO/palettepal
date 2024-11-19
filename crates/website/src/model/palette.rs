@@ -42,6 +42,21 @@ impl Palette {
         self.colors.lock_mut().push_cloned(new_color);
     }
 
+    pub fn add_new_color_hue(&self, hue: f32) {
+        let new_color = PaletteColor::new(hue.rem_euclid(360.));
+        self.colors.lock_mut().push_cloned(new_color);
+    }
+
+    pub fn remove_hue(&self, hue: f32) {
+        let mut colors = self.colors.lock_mut();
+
+        if colors.len() < 1 {
+            return;
+        }
+
+        colors.replace_cloned(colors.iter().cloned().filter(|v| (v.hue.get() - hue).abs() >= 2.).collect::<Vec<_>>());
+    }
+
     pub fn to_jasc_pal(&self) -> String {
         let mut palette = jascpal::Palette::new();
 

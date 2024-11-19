@@ -31,7 +31,7 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
                 None
             } else {
                 Some(html!("div", {
-                    .dwclass!("flex @sm:flex-row @<sm:flex-col gap-2 m-t-8 justify-center")
+                    .dwclass!("flex flex-col gap-2 m-t-8 justify-center")
                     .child(html!("div", {
                         .dwclass!("flex flex-col gap-1 w-72")
                         .child(text_input!({
@@ -86,7 +86,7 @@ pub fn color_panel(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, S
 
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("p-4 @>sm:w-md @<sm:w-sm rounded")
+        .dwclass!("p-4 @sm:w-md @<sm:w-sm rounded")
         .child(html!("div", {
             .dwclass!("grid")
             .child(html!("div", {
