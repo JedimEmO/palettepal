@@ -147,7 +147,11 @@ pub fn color_panel(
                     .children([
                         svg_button(Icons::Copy, "Copy color settings", clone!(color => move |_| {
                             COPIED_COLOR.set(Some(color.clone()));
-                        }), |b| b),
+                        }), |b| {
+                            dwclass_signal!(b, "fill-charm-500", COPIED_COLOR.signal_cloned().map(clone!(color => move |c| {
+                                c.map(|c| c.name.get_cloned() == color.name.get_cloned()).unwrap_or(false)
+                            })))
+                        }),
                         svg_button(Icons::Paste, "Paste color settings", clone!(color => move |_| {
                             let Some(copied) = COPIED_COLOR.get_cloned() else {
                                 return;
