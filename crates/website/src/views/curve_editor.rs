@@ -1,18 +1,18 @@
-use dominator::{events, Dom, EventOptions};
-use futures_signals::signal::{option, Mutable, ReadOnlyMutable, SignalExt};
-use uuid::Uuid;
-use crate::views::main_view::PalettePalViewModel;
-use dwind::prelude::*;
-use futures_signals::signal_vec::SignalVecExt;
+use crate::mixins::observe_size::observe_size_mixin;
 use crate::mixins::panel::panel_mixin;
+use crate::model::palette::Palette;
+use crate::model::sampling_curve::Modifiers;
+use crate::views::main_view::PalettePalViewModel;
+use dominator::events::MouseButton;
+use dominator::{events, Dom, EventOptions};
+use dwind::prelude::*;
 use dwind::prelude::*;
 use dwui::prelude::InputValueWrapper;
+use futures_signals::signal::{option, Mutable, ReadOnlyMutable, SignalExt};
 use futures_signals::signal_map::SignalMapExt;
+use futures_signals::signal_vec::SignalVecExt;
 use glam::Vec2;
-use crate::mixins::observe_size::observe_size_mixin;
-use crate::model::palette::Palette;
-use dominator::events::MouseButton;
-use crate::model::sampling_curve::Modifiers;
+use uuid::Uuid;
 
 pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
@@ -21,9 +21,12 @@ pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
     // nil is always present
     let selected_curve = Mutable::new(Uuid::nil());
 
-    let all_curves = palette.sampling_curves.entries_cloned().map(|(k, v)| {
-        (k, v.name.get_cloned())
-    }).to_signal_cloned().to_signal_vec();
+    let all_curves = palette
+        .sampling_curves
+        .entries_cloned()
+        .map(|(k, v)| (k, v.name.get_cloned()))
+        .to_signal_cloned()
+        .to_signal_vec();
 
     html!("div", {
         .apply(panel_mixin)
@@ -60,11 +63,14 @@ pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
 fn curve_editor(palette: Palette, current_curve_id: ReadOnlyMutable<Uuid>) -> Dom {
     let rect_size = Mutable::new((0., 0.));
 
-    let rect_sample_space_curve = current_curve_id.signal().map(clone!(palette => move |id| {
-        palette.sampling_curves.signal_map_cloned().key_cloned(id).map(|curve| {
-            option(curve.map(|c| c.curve.signal_cloned()))
-        }).flatten()
-    })).flatten();
+    let rect_sample_space_curve = current_curve_id
+        .signal()
+        .map(clone!(palette => move |id| {
+            palette.sampling_curves.signal_map_cloned().key_cloned(id).map(|curve| {
+                option(curve.map(|c| c.curve.signal_cloned()))
+            }).flatten()
+        }))
+        .flatten();
 
     let dragging_idx: Mutable<Option<usize>> = Mutable::new(None);
 

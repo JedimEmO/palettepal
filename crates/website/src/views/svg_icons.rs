@@ -1,35 +1,36 @@
 use dominator::{events, Dom, DomBuilder};
-use web_sys::SvgElement;
 use dwind::prelude::*;
+use web_sys::SvgElement;
 
 pub enum Icons {
     Copy,
     Paste,
     Download,
-    Edit
+    Edit,
 }
 
-pub fn svg_button(icon: Icons, help: &str, mut on_click: impl FnMut(events::Click) -> () + 'static, apply: impl FnOnce(DomBuilder<SvgElement>) -> DomBuilder<SvgElement>) -> Dom {
+pub fn svg_button(
+    icon: Icons,
+    help: &str,
+    mut on_click: impl FnMut(events::Click) -> () + 'static,
+    apply: impl FnOnce(DomBuilder<SvgElement>) -> DomBuilder<SvgElement>,
+) -> Dom {
     let apply = move |b: DomBuilder<SvgElement>| {
-        let b = dwclass!(b, "fill-woodsmoke-100 hover:fill-picton-blue-500 w-8 h-8 cursor-pointer");
+        let b = dwclass!(
+            b,
+            "fill-woodsmoke-100 hover:fill-picton-blue-500 w-8 h-8 cursor-pointer"
+        );
         b.event(move |event: events::Click| {
             on_click(event);
-        }).apply(apply)
+        })
+        .apply(apply)
     };
 
     let icon = match icon {
-        Icons::Copy => {
-            copy_icon(apply)
-        }
-        Icons::Paste => {
-            paste_icon(apply)
-        },
-        Icons::Download => {
-            download_icon(apply)
-        },
-        Icons::Edit => {
-            edit_icon(apply)
-        }
+        Icons::Copy => copy_icon(apply),
+        Icons::Paste => paste_icon(apply),
+        Icons::Download => download_icon(apply),
+        Icons::Edit => edit_icon(apply),
     };
 
     html!("div", {

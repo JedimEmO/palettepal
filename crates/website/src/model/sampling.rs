@@ -1,11 +1,11 @@
-use std::f32::consts::PI;
-use js_sys::Math::sqrt;
-use serde::{Deserialize, Serialize};
+use futures_signals::map_ref;
 use futures_signals::signal::{Mutable, Signal};
 use glam::{Mat3, Vec2};
-use futures_signals::map_ref;
-use std::str::FromStr;
 use hsv::hsv_to_rgb;
+use js_sys::Math::sqrt;
+use serde::{Deserialize, Serialize};
+use std::f32::consts::PI;
+use std::str::FromStr;
 
 pub fn get_equidistant_points_in_range(start: f32, end: f32, count: usize) -> Vec<f32> {
     let mut points = vec![];
@@ -26,9 +26,7 @@ pub fn algebraic_simple(x: f64) -> f64 {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ColorSampler {
-    Sigmoid {
-        amplification: Mutable<f32>,
-    },
+    Sigmoid { amplification: Mutable<f32> },
     Diagonal,
     DwindCurve,
     DwindCurve2,
@@ -36,7 +34,9 @@ pub enum ColorSampler {
 
 impl Default for ColorSampler {
     fn default() -> Self {
-        Self::Sigmoid { amplification: 4.0.into() }
+        Self::Sigmoid {
+            amplification: 4.0.into(),
+        }
     }
 }
 
@@ -56,7 +56,9 @@ impl FromStr for ColorSampler {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Sigmoid" => Ok(Self::Sigmoid { amplification: Mutable::new(4.) }),
+            "Sigmoid" => Ok(Self::Sigmoid {
+                amplification: Mutable::new(4.),
+            }),
             "Diagonal" => Ok(Self::Diagonal),
             "DwindCurve" => Ok(Self::DwindCurve),
             "DwindCurve2" => Ok(Self::DwindCurve2),
@@ -103,7 +105,7 @@ impl SamplingRect {
         Mat3::from_rotation_z(self.rotation.get())
     }
 
-    pub fn matrices_signal(&self) -> impl Signal<Item=(Mat3, Mat3, Mat3)> {
+    pub fn matrices_signal(&self) -> impl Signal<Item = (Mat3, Mat3, Mat3)> {
         map_ref! {
             let x = self.x.signal(),
             let y = self.y.signal(),
@@ -118,19 +120,20 @@ impl SamplingRect {
     }
 
     pub fn matrices(&self) -> (Mat3, Mat3, Mat3) {
-        (Mat3::from_translation(glam::Vec2::new(self.x.get(), self.y.get())),
-         Mat3::from_scale(glam::Vec2::new(self.width.get(), self.height.get())),
-         Mat3::from_rotation_z(self.rotation.get()))
+        (
+            Mat3::from_translation(glam::Vec2::new(self.x.get(), self.y.get())),
+            Mat3::from_scale(glam::Vec2::new(self.width.get(), self.height.get())),
+            Mat3::from_rotation_z(self.rotation.get()),
+        )
     }
 }
-
 
 pub fn hsv_colors_u8(hue: f32, angle: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
     let mut out_colors = vec![];
 
     for shade in sample_coords {
         // Shift the hue based on the color plane angle
-        let color_hue = (hue - angle * shade.y).rem_euclid( 360.);
+        let color_hue = (hue - angle * shade.y).rem_euclid(360.);
         let color = hsv_to_rgb(color_hue as f64, shade.x as f64, shade.y as f64);
         out_colors.push(color);
     }
@@ -138,20 +141,28 @@ pub fn hsv_colors_u8(hue: f32, angle: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8
     out_colors
 }
 
-pub fn hsl_colors_u8(hue: f32, angle: f32,  sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
+pub fn hsl_colors_u8(hue: f32, angle: f32, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
     let mut out_colors = vec![];
 
     for shade in sample_coords {
         // Shift the hue based on the color plane angle
         let color_hue = hue - angle * shade.y;
-        let color = hsl::HSL { h: (color_hue as f64).rem_euclid(360.), s: shade.x as f64, l: shade.y as f64 }.to_rgb();
+        let color = hsl::HSL {
+            h: (color_hue as f64).rem_euclid(360.),
+            s: shade.x as f64,
+            l: shade.y as f64,
+        }
+        .to_rgb();
         out_colors.push(color);
     }
 
     out_colors
 }
 
-pub fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat3, Mat3, Mat3)> + 'static, points_signal: impl Signal<Item=Vec<Vec2>> + 'static) -> impl Signal<Item=Vec<Vec2>> + 'static {
+pub fn static_sample_signal(
+    sampling_rect_matrices_signal: impl Signal<Item = (Mat3, Mat3, Mat3)> + 'static,
+    points_signal: impl Signal<Item = Vec<Vec2>> + 'static,
+) -> impl Signal<Item = Vec<Vec2>> + 'static {
     map_ref! {
         let points = points_signal,
         let sampling_rect_matrices = sampling_rect_matrices_signal => {
@@ -160,7 +171,10 @@ pub fn static_sample_signal(sampling_rect_matrices_signal: impl Signal<Item=(Mat
     }
 }
 
-pub fn static_sample(sampling_rect_matrices: &(Mat3, Mat3, Mat3), input_points: &Vec<Vec2>) -> Vec<Vec2> {
+pub fn static_sample(
+    sampling_rect_matrices: &(Mat3, Mat3, Mat3),
+    input_points: &Vec<Vec2>,
+) -> Vec<Vec2> {
     let mut points = vec![];
 
     for point in input_points {

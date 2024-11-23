@@ -1,5 +1,5 @@
-use std::f32::consts::PI;
 use crate::views::geometry::shader_program::ColorSpaceVertex;
+use std::f32::consts::PI;
 
 pub fn make_cylinder(angle: f32) -> Vec<ColorSpaceVertex> {
     let mut out = vec![];

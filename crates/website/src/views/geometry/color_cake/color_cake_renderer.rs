@@ -1,13 +1,13 @@
-use web_sys::WebGl2RenderingContext;
-use anyhow::anyhow;
-use futures_signals::signal::Mutable;
-use glam::{Mat4, Vec2};
 use crate::model::palette_color::{CakeType, ColorSpace};
 use crate::views::geometry::color_cake::brick_geometry::brick_triangles;
 use crate::views::geometry::cylinder_geometry;
 use crate::views::geometry::cylinder_geometry::make_cylinder;
 use crate::views::geometry::shader_program::{GeometryIndex, ShaderProgram};
 use crate::views::geometry::transform::Transform;
+use anyhow::anyhow;
+use futures_signals::signal::Mutable;
+use glam::{Mat4, Vec2};
+use web_sys::WebGl2RenderingContext;
 
 pub struct ColorCake {
     shader_program: ShaderProgram,
@@ -64,7 +64,7 @@ impl ColorCake {
         color_space: ColorSpace,
         sample_points: Vec<Vec2>,
         cake_type: CakeType,
-        plane_angle: f32
+        plane_angle: f32,
     ) -> anyhow::Result<()> {
         self.sample_curve.set(sample_points.clone());
         let program = &self.shader_program.program;
@@ -84,12 +84,8 @@ impl ColorCake {
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
 
         let mut vertices = match cake_type {
-            CakeType::Cylinder => {
-                make_cylinder(plane_angle.to_radians())
-            }
-            CakeType::Brick => {
-                brick_triangles(plane_angle.to_radians())
-            }
+            CakeType::Cylinder => make_cylinder(plane_angle.to_radians()),
+            CakeType::Brick => brick_triangles(plane_angle.to_radians()),
         };
 
         unsafe {
@@ -134,9 +130,8 @@ impl ColorCake {
 
         let color_space = match color_space {
             ColorSpace::HSV => 0,
-            ColorSpace::HSL => 1
+            ColorSpace::HSL => 1,
         };
-
 
         let scale = self.transform.scale;
         let view_matrix = self.transform.projection;
@@ -161,11 +156,7 @@ impl ColorCake {
         context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
         context.clear_depth(0.);
 
-        context.draw_arrays(
-            WebGl2RenderingContext::TRIANGLES,
-            0,
-            vertices.len() as i32,
-        );
+        context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vertices.len() as i32);
 
         Ok(())
     }

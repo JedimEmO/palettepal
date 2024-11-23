@@ -1,15 +1,15 @@
-use std::rc::Rc;
-use std::time::Duration;
-use dominator::{events, Dom, EventOptions};
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
 use crate::views::main_view::PalettePalViewModel;
+use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
+use dwui::prelude::*;
 use futures_signals::signal::{Mutable, SignalExt};
 use futures_signals::signal_vec::SignalVecExt;
-use crate::mixins::panel::panel_mixin;
-use dwui::prelude::*;
+use std::rc::Rc;
+use std::time::Duration;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
@@ -21,13 +21,16 @@ pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     })
 }
 
-
 fn preview_palette(palette: Palette) -> Dom {
     let sampling_curves = palette.sampling_curves.clone();
 
-    let colors = palette.colors.signal_vec_cloned().map_signal(clone!(sampling_curves => move |color| {
-        color.colors_u8_signal(&sampling_curves)
-    })).to_signal_cloned();
+    let colors = palette
+        .colors
+        .signal_vec_cloned()
+        .map_signal(clone!(sampling_curves => move |color| {
+            color.colors_u8_signal(&sampling_curves)
+        }))
+        .to_signal_cloned();
 
     const PIXEL_SIZE: f64 = 40.;
 
@@ -64,22 +67,24 @@ fn color_circle_preview(palette: Palette) -> Dom {
 
     let dragging_hue: Mutable<Option<Mutable<f32>>> = Mutable::new(None);
 
-    let on_move = Rc::new(clone!(dragging_hue, palette => move |x: f32, y: f32, all: bool| {
-        if let Some(hue) = dragging_hue.get_cloned() {
-            let dx = x  - 256.;
-            let dy = y - 256.;
-            let angle = dy.atan2(dx).to_degrees();
-            let old_angle = hue.get();
+    let on_move = Rc::new(
+        clone!(dragging_hue, palette => move |x: f32, y: f32, all: bool| {
+            if let Some(hue) = dragging_hue.get_cloned() {
+                let dx = x  - 256.;
+                let dy = y - 256.;
+                let angle = dy.atan2(dx).to_degrees();
+                let old_angle = hue.get();
 
-            if all {
-                for color in palette.colors.lock_mut().iter() {
-                    color.hue.set(color.hue.get() + angle - old_angle);
+                if all {
+                    for color in palette.colors.lock_mut().iter() {
+                        color.hue.set(color.hue.get() + angle - old_angle);
+                    }
+                } else {
+                    hue.set(angle);
                 }
-            } else {
-                hue.set(angle);
             }
-        }
-    }));
+        }),
+    );
 
     html!("div", {
         .dwclass!("grid")

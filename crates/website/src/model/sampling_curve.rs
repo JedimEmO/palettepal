@@ -1,7 +1,7 @@
+use crate::model::palette_color::DWIND_CURVE2;
 use futures_signals::signal::Mutable;
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
-use crate::model::palette_color::DWIND_CURVE2;
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct SamplingCurve {
@@ -13,7 +13,7 @@ pub struct SamplingCurve {
 pub struct Modifiers {
     pub alt: bool,
     pub ctrl: bool,
-    pub shift: bool
+    pub shift: bool,
 }
 
 impl SamplingCurve {
@@ -47,7 +47,7 @@ impl SamplingCurve {
             new_point.y = if modifiers.ctrl {
                 curve_data[idx].y
             } else {
-                 new_point.y
+                new_point.y
             };
 
             curve_data[idx] = new_point;
@@ -55,15 +55,20 @@ impl SamplingCurve {
 
         self.sort();
 
-        let new_idx = self.curve.lock_ref().iter().position(|v| v == &new_point).unwrap();
+        let new_idx = self
+            .curve
+            .lock_ref()
+            .iter()
+            .position(|v| v == &new_point)
+            .unwrap();
 
         new_idx
     }
 
     pub fn sort(&self) {
-        self.curve.lock_mut().sort_by(|lhs, rhs| {
-            lhs.x.total_cmp(&rhs.x)
-        })
+        self.curve
+            .lock_mut()
+            .sort_by(|lhs, rhs| lhs.x.total_cmp(&rhs.x))
     }
 }
 
@@ -78,18 +83,26 @@ impl SamplingCurve {
     pub fn tailwind_happy() -> Self {
         Self {
             name: Mutable::new("Tailwind Happy".to_string()),
-            curve: DWIND_CURVE2.into_iter().map(|v| Vec2::new(v.0, v.1)).collect::<Vec<_>>().into(),
+            curve: DWIND_CURVE2
+                .into_iter()
+                .map(|v| Vec2::new(v.0, v.1))
+                .collect::<Vec<_>>()
+                .into(),
         }
     }
 
     pub fn tailwind_diagonal() -> Self {
         Self {
             name: "Tailwind Diagonal".to_string().into(),
-            curve: (0..11).into_iter().map(|v| {
-                let x = v as f32 / 11.;
+            curve: (0..11)
+                .into_iter()
+                .map(|v| {
+                    let x = v as f32 / 11.;
 
-                Vec2::new(x, 1. - x)
-            }).collect::<Vec<_>>().into(),
+                    Vec2::new(x, 1. - x)
+                })
+                .collect::<Vec<_>>()
+                .into(),
         }
     }
 }

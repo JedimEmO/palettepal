@@ -1,6 +1,6 @@
 use dominator::DomBuilder;
-use web_sys::{Element};
 use dwind::prelude::*;
+use web_sys::Element;
 
 pub fn panel_mixin<T: AsRef<Element>>(b: DomBuilder<T>) -> DomBuilder<T> {
     let b = dwclass!(b, "border border-woodsmoke-600 hover:border-woodsmoke-400");

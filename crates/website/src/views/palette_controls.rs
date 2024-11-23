@@ -1,18 +1,18 @@
-use std::iter::once;
-use dominator::{events, Dom};
-use crate::model::palette::{Palette};
-use dwind::prelude::*;
-use dwui::prelude::*;
-use futures_signals::signal::{not, Mutable};
-use web_sys::{window, HtmlAnchorElement, HtmlInputElement, Url};
-use futures_signals::signal::SignalExt;
-use gloo_file::Blob;
-use gloo_file::futures::read_as_text;
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
-use wasm_bindgen_futures::spawn_local;
 use crate::mixins::click_outside_collapse::click_outside_collapse_mixin;
 use crate::mixins::panel::panel_mixin;
+use crate::model::palette::Palette;
 use crate::views::main_view::PalettePalViewModel;
+use dominator::{events, Dom};
+use dwind::prelude::*;
+use dwui::prelude::*;
+use futures_signals::signal::SignalExt;
+use futures_signals::signal::{not, Mutable};
+use gloo_file::futures::read_as_text;
+use gloo_file::Blob;
+use std::iter::once;
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen_futures::spawn_local;
+use web_sys::{window, HtmlAnchorElement, HtmlInputElement, Url};
 
 pub fn palette_controls(vm: PalettePalViewModel) -> Dom {
     html!("div", {
@@ -32,28 +32,35 @@ pub fn palette_controls(vm: PalettePalViewModel) -> Dom {
 }
 
 fn project_menu(vm: PalettePalViewModel) -> Dom {
-    let PalettePalViewModel { palette, show_sampling_curve_editor, .. } = vm;
+    let PalettePalViewModel {
+        palette,
+        show_sampling_curve_editor,
+        ..
+    } = vm;
 
-    application_menu("Project", clone!(palette => move || {
-        html!("div", {
-            .children([
-                html!("div", {
-                    .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
-                    .text("Add Color")
-                    .event(clone!(palette => move |_: events::Click| {
-                        palette.lock_mut().add_new_color();
-                    }))
-                }),
-                html!("div", {
-                    .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
-                    .text("Edit sampling curves")
-                    .event(clone!(show_sampling_curve_editor => move |_: events::Click| {
-                        show_sampling_curve_editor.set(!show_sampling_curve_editor.get());
-                    }))
-                })
-            ])
-        })
-    }))
+    application_menu(
+        "Project",
+        clone!(palette => move || {
+            html!("div", {
+                .children([
+                    html!("div", {
+                        .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
+                        .text("Add Color")
+                        .event(clone!(palette => move |_: events::Click| {
+                            palette.lock_mut().add_new_color();
+                        }))
+                    }),
+                    html!("div", {
+                        .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
+                        .text("Edit sampling curves")
+                        .event(clone!(show_sampling_curve_editor => move |_: events::Click| {
+                            show_sampling_curve_editor.set(!show_sampling_curve_editor.get());
+                        }))
+                    })
+                ])
+            })
+        }),
+    )
 }
 
 fn application_menu(label: &str, mut content_factory: impl FnMut() -> Dom + 'static) -> Dom {
@@ -82,7 +89,12 @@ fn application_menu(label: &str, mut content_factory: impl FnMut() -> Dom + 'sta
 }
 
 fn export_menu(vm: PalettePalViewModel) -> Dom {
-    let PalettePalViewModel { palette, export_file_content, export_image_content , ..} = vm;
+    let PalettePalViewModel {
+        palette,
+        export_file_content,
+        export_image_content,
+        ..
+    } = vm;
 
     application_menu("Export", move || {
         html!("div", {
@@ -242,15 +254,36 @@ fn download_file(filename: &str, content: String) {
     let blob = web_sys::Blob::new_with_str_sequence(&sequence).unwrap_throw();
 
     let file_url = Url::create_object_url_with_blob(&blob).unwrap_throw();
-    let dl_link = window().unwrap().document().unwrap().create_element("a").unwrap_throw().dyn_into::<HtmlAnchorElement>().unwrap_throw();
+    let dl_link = window()
+        .unwrap()
+        .document()
+        .unwrap()
+        .create_element("a")
+        .unwrap_throw()
+        .dyn_into::<HtmlAnchorElement>()
+        .unwrap_throw();
 
     dl_link.set_attribute("href", &file_url).unwrap_throw();
     dl_link.set_attribute("download", filename).unwrap_throw();
 
-    window().unwrap().document().unwrap().body().unwrap_throw().append_child(&dl_link).unwrap_throw();
+    window()
+        .unwrap()
+        .document()
+        .unwrap()
+        .body()
+        .unwrap_throw()
+        .append_child(&dl_link)
+        .unwrap_throw();
 
     dl_link.click();
 
-    window().unwrap().document().unwrap().body().unwrap_throw().remove_child(&dl_link).unwrap_throw();
+    window()
+        .unwrap()
+        .document()
+        .unwrap()
+        .body()
+        .unwrap_throw()
+        .remove_child(&dl_link)
+        .unwrap_throw();
     Url::revoke_object_url(&file_url).unwrap_throw();
 }

@@ -1,8 +1,11 @@
 use dominator::Dom;
-use futures_signals::signal::{Signal, SignalExt};
 use dwind::prelude::*;
+use futures_signals::signal::{Signal, SignalExt};
 
-pub fn menu_overlay(top: impl Signal<Item=Dom> + 'static, inner: impl Signal<Item=Dom> + 'static) -> Dom {
+pub fn menu_overlay(
+    top: impl Signal<Item = Dom> + 'static,
+    inner: impl Signal<Item = Dom> + 'static,
+) -> Dom {
     html!("div", {
         .dwclass!("grid")
         .child(html!("div", {

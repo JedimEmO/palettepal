@@ -8,7 +8,7 @@ pub struct Transform {
     pub projection: Mat4,
     pub scale: Mat4,
     pub translate_screen: Vec2,
-    pub dynamic_mat: Mutable<Mat4>
+    pub dynamic_mat: Mutable<Mat4>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -19,10 +19,7 @@ pub struct Plane {
 
 impl Plane {
     pub fn new(point: Vec3, normal: Vec3) -> Self {
-        Self {
-            point,
-            normal,
-        }
+        Self { point, normal }
     }
 
     pub fn xy() -> Self {
@@ -112,7 +109,12 @@ impl Transform {
         self.project_screen_coords_to_world_plane(screen, Plane::new(Vec3::ZERO, Vec3::Z))
     }
 
-    pub fn project_screen_pos_on_clipped_plane(&self, screen: Vec2, plane: Plane, aabb: AABB) -> Option<Vec2> {
+    pub fn project_screen_pos_on_clipped_plane(
+        &self,
+        screen: Vec2,
+        plane: Plane,
+        aabb: AABB,
+    ) -> Option<Vec2> {
         let plane_position = self.project_screen_coords_to_world_plane(screen, plane);
 
         if aabb.contains(plane_position.truncate()) {
@@ -132,15 +134,39 @@ impl Transform {
 
         Self {
             viewport: Mat4::from_cols_array(&[
-                1., 0., 0., screen_size.x / 2.,
-                0., 1., 0., screen_size.y / 2.,
-                0., 0., 1., 0.,
-                0., 0., 0., 1.,
+                1.,
+                0.,
+                0.,
+                screen_size.x / 2.,
+                0.,
+                1.,
+                0.,
+                screen_size.y / 2.,
+                0.,
+                0.,
+                1.,
+                0.,
+                0.,
+                0.,
+                0.,
+                1.,
             ]) * Mat4::from_cols_array(&[
-                screen_size.x / 2., 0., 0., 0.,
-                0., -screen_size.y / 2., 0., 0.,
-                0., 0., 1., 0.,
-                0., 0., 0., 1.,
+                screen_size.x / 2.,
+                0.,
+                0.,
+                0.,
+                0.,
+                -screen_size.y / 2.,
+                0.,
+                0.,
+                0.,
+                0.,
+                1.,
+                0.,
+                0.,
+                0.,
+                0.,
+                1.,
             ]),
             projection: Mat4::look_at_lh(Vec3::new(0., 0.2, -0.3), Vec3::ZERO, Vec3::Y),
             scale: Mat4::from_scale(Vec3::new(0.6 * 1.5, 0.6, 0.6)),
@@ -157,15 +183,39 @@ impl Default for Transform {
 
         Self {
             viewport: Mat4::from_cols_array(&[
-                1., 0., 0., screen_size.x / 2.,
-                0., 1., 0., screen_size.y / 2.,
-                0., 0., 1., 0.,
-                0., 0., 0., 1.,
+                1.,
+                0.,
+                0.,
+                screen_size.x / 2.,
+                0.,
+                1.,
+                0.,
+                screen_size.y / 2.,
+                0.,
+                0.,
+                1.,
+                0.,
+                0.,
+                0.,
+                0.,
+                1.,
             ]) * Mat4::from_cols_array(&[
-                screen_size.x / 2., 0., 0., 0.,
-                0., -screen_size.y / 2., 0., 0.,
-                0., 0., 1., 0.,
-                0., 0., 0., 1.,
+                screen_size.x / 2.,
+                0.,
+                0.,
+                0.,
+                0.,
+                -screen_size.y / 2.,
+                0.,
+                0.,
+                0.,
+                0.,
+                1.,
+                0.,
+                0.,
+                0.,
+                0.,
+                1.,
             ]),
             projection: Mat4::look_at_lh(Vec3::new(0., 0.2, -0.3), Vec3::ZERO, Vec3::Y),
             scale: Mat4::from_scale(Vec3::new(0.6 * 1.5, 0.6, 0.6)),

@@ -1,24 +1,24 @@
-pub mod transform;
-pub mod cylinder_geometry;
-pub mod color_cake_renderer;
 pub mod brick_geometry;
+pub mod color_cake_renderer;
+pub mod cylinder_geometry;
+pub mod transform;
 
+use crate::model::palette_color::{CakeType, PaletteColor};
+use crate::model::sampling_curve::SamplingCurve;
+use crate::views::geometry::color_cake_renderer::ColorCake;
+use crate::views::geometry::transform::Plane;
 use crate::widgets::shader_canvas::*;
 use dominator::{events, Dom};
 use dwind::prelude::*;
 use futures_signals::map_ref;
 use futures_signals::signal::{Mutable, SignalExt};
+use futures_signals::signal_map::MutableBTreeMap;
 use glam::{Mat4, Vec2, Vec3};
 use std::rc::Rc;
-use futures_signals::signal_map::MutableBTreeMap;
+use transform::{Transform, AABB};
 use uuid::Uuid;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, WebGl2RenderingContext};
-use transform::{Transform, AABB};
-use crate::model::palette_color::{CakeType, PaletteColor};
-use crate::model::sampling_curve::SamplingCurve;
-use crate::views::geometry::color_cake_renderer::ColorCake;
-use crate::views::geometry::transform::Plane;
 
 #[derive(Copy, Clone, Debug)]
 enum DragPoint {
@@ -64,9 +64,9 @@ pub fn color_cake(
     });
 
     let sample_curve_world_pos_signal = color.samples_signal(sampling_curves.clone()).map(|s| {
-        s.into_iter().map(|pos| {
-            Vec2::new(pos.x, 2. * pos.y - 1.)
-        }).collect::<Vec<_>>()
+        s.into_iter()
+            .map(|pos| Vec2::new(pos.x, 2. * pos.y - 1.))
+            .collect::<Vec<_>>()
     });
 
     let render_data_signal = map_ref! {
@@ -332,4 +332,3 @@ pub fn color_cake(
         ])
     })
 }
-

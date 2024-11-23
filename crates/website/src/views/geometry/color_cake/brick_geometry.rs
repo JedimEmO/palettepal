@@ -1,5 +1,5 @@
-use glam::{Mat4, Vec2, Vec3};
 use crate::views::geometry::shader_program::ColorSpaceVertex;
+use glam::{Mat4, Vec2, Vec3};
 
 pub fn brick_triangles(angle: f32) -> Vec<ColorSpaceVertex> {
     let back_y = angle.sin();
@@ -20,32 +20,84 @@ pub fn brick_triangles(angle: f32) -> Vec<ColorSpaceVertex> {
     vec![
         // Left side
         // 1
-        ColorSpaceVertex { pos: back_top_left.to_array(), hsx: [1. + back_y, 0., 1.] },
-        ColorSpaceVertex { pos: back_bottom_left.to_array(), hsx: [1., 0., 0.] },
-        ColorSpaceVertex { pos: front_bottom_left.to_array(), hsx: [0., 0., 0.] },
+        ColorSpaceVertex {
+            pos: back_top_left.to_array(),
+            hsx: [1. + back_y, 0., 1.],
+        },
+        ColorSpaceVertex {
+            pos: back_bottom_left.to_array(),
+            hsx: [1., 0., 0.],
+        },
+        ColorSpaceVertex {
+            pos: front_bottom_left.to_array(),
+            hsx: [0., 0., 0.],
+        },
         // 2
-        ColorSpaceVertex { pos: back_top_left.to_array(), hsx: [1. + back_y, 0., 1.] },
-        ColorSpaceVertex { pos: front_bottom_left.to_array(), hsx: [0., 0., 0.] },
-        ColorSpaceVertex { pos: front_top_left.to_array(), hsx: [0. + back_y, 0., 1.] },
-
+        ColorSpaceVertex {
+            pos: back_top_left.to_array(),
+            hsx: [1. + back_y, 0., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_bottom_left.to_array(),
+            hsx: [0., 0., 0.],
+        },
+        ColorSpaceVertex {
+            pos: front_top_left.to_array(),
+            hsx: [0. + back_y, 0., 1.],
+        },
         // Front
         // 1
-        ColorSpaceVertex { pos: front_top_right.to_array(), hsx: [0. + back_y, 1., 1.] },
-        ColorSpaceVertex { pos: front_top_left.to_array(), hsx: [0. + back_y, 0., 1.] },
-        ColorSpaceVertex { pos: front_bottom_left.to_array(), hsx: [0., 0., 0.] },
+        ColorSpaceVertex {
+            pos: front_top_right.to_array(),
+            hsx: [0. + back_y, 1., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_top_left.to_array(),
+            hsx: [0. + back_y, 0., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_bottom_left.to_array(),
+            hsx: [0., 0., 0.],
+        },
         // 2
-        ColorSpaceVertex { pos: front_top_right.to_array(), hsx: [0. + back_y, 1., 1.] },
-        ColorSpaceVertex { pos: front_bottom_left.to_array(), hsx: [0., 0., 0.] },
-        ColorSpaceVertex { pos: front_bottom_right.to_array(), hsx: [0., 0., 0.] },
-
+        ColorSpaceVertex {
+            pos: front_top_right.to_array(),
+            hsx: [0. + back_y, 1., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_bottom_left.to_array(),
+            hsx: [0., 0., 0.],
+        },
+        ColorSpaceVertex {
+            pos: front_bottom_right.to_array(),
+            hsx: [0., 0., 0.],
+        },
         // Top
         // 1
-        ColorSpaceVertex { pos: back_top_right.to_array(), hsx: [1. + back_y, 1., 1.] },
-        ColorSpaceVertex { pos: back_top_left.to_array(), hsx: [1. + back_y, 0., 1.] },
-        ColorSpaceVertex { pos: front_top_left.to_array(), hsx:[0. + back_y, 0., 1.] },
+        ColorSpaceVertex {
+            pos: back_top_right.to_array(),
+            hsx: [1. + back_y, 1., 1.],
+        },
+        ColorSpaceVertex {
+            pos: back_top_left.to_array(),
+            hsx: [1. + back_y, 0., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_top_left.to_array(),
+            hsx: [0. + back_y, 0., 1.],
+        },
         //2
-        ColorSpaceVertex { pos: back_top_right.to_array(), hsx: [1. + back_y, 1., 1.] },
-        ColorSpaceVertex { pos: front_top_left.to_array(), hsx: [0. + back_y, 0., 1.] },
-        ColorSpaceVertex { pos: front_top_right.to_array(), hsx: [0. + back_y, 1., 1.] },
+        ColorSpaceVertex {
+            pos: back_top_right.to_array(),
+            hsx: [1. + back_y, 1., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_top_left.to_array(),
+            hsx: [0. + back_y, 0., 1.],
+        },
+        ColorSpaceVertex {
+            pos: front_top_right.to_array(),
+            hsx: [0. + back_y, 1., 1.],
+        },
     ]
 }

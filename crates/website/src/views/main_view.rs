@@ -1,17 +1,18 @@
-use crate::model::palette::{Palette};
-use crate::views::color_panel::color_panel;
-use dominator::Dom;
-use dwind::prelude::*;
-use futures_signals::signal::{always, Mutable, SignalExt};
-use futures_signals::signal_vec::{SignalVecExt};
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsCast;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use crate::mixins::panel::panel_mixin;
+use crate::model::palette::Palette;
+use crate::views::color_panel::color_panel;
 use crate::views::curve_editor::sampling_curve_editor;
+use crate::views::examples::dwui::dwui_example_container;
 use crate::views::palette_controls::palette_controls;
 use crate::views::palette_overview::palette_overview;
 use crate::widgets::menu_overlay::menu_overlay;
+use dominator::Dom;
+use dwind::prelude::*;
+use futures_signals::signal::{always, Mutable, SignalExt};
+use futures_signals::signal_vec::SignalVecExt;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::JsCast;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PalettePalViewModel {
@@ -77,7 +78,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
 
                         html!("div", {
                             .apply(panel_mixin)
-                            .dwclass!("p-4 @>sm:w-md @<sm:w-sm ")
+                            .dwclass!("p-4 @>sm:w-md @<sm:w-sm")
                             .child(html!("canvas" => HtmlCanvasElement, {
                                 .dwclass!("w-full h-12")
                                 .style("image-rendering", "pixelated")
@@ -104,6 +105,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                         })
                     })
                 }))
+                .child(dwui_example_container(palette.clone()))
                 .child_signal(vm.show_sampling_curve_editor.signal().map(clone!(vm => move |v| if v { Some(sampling_curve_editor(vm.clone())) } else { None })))
                 .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
                     color_panel(color, palette.sampling_curves.clone())

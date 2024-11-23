@@ -1,17 +1,19 @@
+use crate::model::palette::TAILWIND_NUMBERS;
+use crate::model::sampling::{
+    hsl_colors_u8, hsv_colors_u8, static_sample, static_sample_signal, SamplingRect,
+};
+use crate::model::sampling_curve::SamplingCurve;
 use dwind_build::colors::Color;
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
-use futures_signals::signal::{Mutable, Signal, SignalExt};
 use futures_signals::map_ref;
+use futures_signals::signal::{Mutable, Signal, SignalExt};
 use futures_signals::signal_map::{MutableBTreeMap, SignalMapExt};
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use uuid::Uuid;
 use wasm_bindgen::UnwrapThrowExt;
-use crate::model::palette::TAILWIND_NUMBERS;
-use crate::model::sampling::{hsl_colors_u8, hsv_colors_u8, static_sample, static_sample_signal, SamplingRect};
-use crate::model::sampling_curve::SamplingCurve;
 
 pub const DWIND_CURVE: [(f32, f32); 11] = [
     (0., 1.),
@@ -45,7 +47,7 @@ pub const DWIND_CURVE2: [(f32, f32); 11] = [
 pub enum ColorSpace {
     #[default]
     HSV,
-    HSL
+    HSL,
 }
 
 impl Display for ColorSpace {
@@ -64,7 +66,7 @@ impl FromStr for ColorSpace {
         match s {
             "HSV" => Ok(Self::HSV),
             "HSL" => Ok(Self::HSL),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -77,7 +79,7 @@ pub struct PaletteColor {
     pub sampling_rect: Mutable<SamplingRect>,
     pub sampling_curve_id: Mutable<Uuid>,
     pub cake_type: Mutable<CakeType>,
-    pub color_plane_angle: Mutable<f32>
+    pub color_plane_angle: Mutable<f32>,
 }
 
 impl PaletteColor {
@@ -101,14 +103,23 @@ impl PaletteColor {
     pub fn samples_signal(
         &self,
         sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
-    ) -> impl Signal<Item=Vec<Vec2>> + 'static {
+    ) -> impl Signal<Item = Vec<Vec2>> + 'static {
         let sampling_rect = self.sampling_rect.clone();
-        let sampling_curve = self.sampling_curve_id.signal().map(move |sampling_curve_key| {
-            sampling_curves.signal_map_cloned().key_cloned(sampling_curve_key)
-        }).flatten();
+        let sampling_curve = self
+            .sampling_curve_id
+            .signal()
+            .map(move |sampling_curve_key| {
+                sampling_curves
+                    .signal_map_cloned()
+                    .key_cloned(sampling_curve_key)
+            })
+            .flatten();
 
         let out = sampling_curve.map(move |curve: Option<SamplingCurve>| {
-            let matrices_signal = sampling_rect.signal_cloned().map(|m| m.matrices_signal()).flatten();
+            let matrices_signal = sampling_rect
+                .signal_cloned()
+                .map(|m| m.matrices_signal())
+                .flatten();
 
             static_sample_signal(matrices_signal, curve.unwrap_throw().curve.signal_cloned())
         });
@@ -118,7 +129,11 @@ impl PaletteColor {
 
     pub fn samples(&self, sampling_curves: &MutableBTreeMap<Uuid, SamplingCurve>) -> Vec<Vec2> {
         let sampling_rect = self.sampling_rect.get_cloned();
-        let curve = sampling_curves.lock_ref().get(&self.sampling_curve_id.get_cloned()).unwrap_throw().clone();
+        let curve = sampling_curves
+            .lock_ref()
+            .get(&self.sampling_curve_id.get_cloned())
+            .unwrap_throw()
+            .clone();
 
         let matrices = sampling_rect.matrices();
         static_sample(&matrices, &curve.curve.get_cloned())
@@ -127,7 +142,7 @@ impl PaletteColor {
     pub fn colors_u8_signal(
         &self,
         sampling_curves: &MutableBTreeMap<Uuid, SamplingCurve>,
-    ) -> impl Signal<Item=Vec<(u8, u8, u8)>> {
+    ) -> impl Signal<Item = Vec<(u8, u8, u8)>> {
         map_ref! {
             let shades = self.samples_signal(sampling_curves.clone()),
             let space = self.color_space.signal(),
@@ -141,23 +156,51 @@ impl PaletteColor {
         }
     }
 
-    pub fn colors_u8(
-        &self,
-        sample_coords: &Vec<Vec2>,
-    ) -> Vec<(u8, u8, u8)> {
+    pub fn colors_u8(&self, sample_coords: &Vec<Vec2>) -> Vec<(u8, u8, u8)> {
         match self.color_space.get() {
-            ColorSpace::HSL => hsl_colors_u8(self.hue.get(), self.color_plane_angle.get(), sample_coords),
-            ColorSpace::HSV => hsv_colors_u8(self.hue.get(), self.color_plane_angle.get(), sample_coords),
+            ColorSpace::HSL => {
+                hsl_colors_u8(self.hue.get(), self.color_plane_angle.get(), sample_coords)
+            }
+            ColorSpace::HSV => {
+                hsv_colors_u8(self.hue.get(), self.color_plane_angle.get(), sample_coords)
+            }
         }
+    }
+
+    pub fn is_tailwind_signal(
+        &self,
+        sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
+    ) -> impl Signal<Item = bool> + 'static {
+        self.sampling_curve_id
+            .signal_cloned()
+            .map(move |sampling_curve_key| {
+                sampling_curves
+                    .lock_ref()
+                    .get(&sampling_curve_key)
+                    .unwrap_throw()
+                    .curve
+                    .signal_ref(|v| v.len() == 11)
+            })
+            .flatten()
     }
 }
 
 impl PaletteColor {
-    pub fn into_dwind_color(self, sampling_curves: &MutableBTreeMap<Uuid, SamplingCurve>) -> Option<Color> {
+    pub fn into_dwind_color(
+        self,
+        sampling_curves: &MutableBTreeMap<Uuid, SamplingCurve>,
+    ) -> Option<Color> {
         let samples = self.samples(sampling_curves);
-        let color = self.colors_u8(&samples).into_iter().enumerate().map(|(idx, (r, g, b))| {
-            (TAILWIND_NUMBERS[idx], format!("{}", hex_color::HexColor::rgb(r, g, b).display_rgba()))
-        });
+        let color = self
+            .colors_u8(&samples)
+            .into_iter()
+            .enumerate()
+            .map(|(idx, (r, g, b))| {
+                (
+                    TAILWIND_NUMBERS[idx],
+                    format!("{}", hex_color::HexColor::rgb(r, g, b).display_rgba()),
+                )
+            });
 
         let mut shades = HashMap::new();
 
@@ -200,7 +243,7 @@ impl FromStr for CakeType {
         match s {
             "Cylinder" => Ok(Self::Cylinder),
             "Brick" => Ok(Self::Brick),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }

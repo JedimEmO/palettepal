@@ -1,6 +1,6 @@
-use std::rc::Rc;
 use dominator::DomBuilder;
 use futures_signals::signal::Mutable;
+use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, ResizeObserver, ResizeObserverEntry};
@@ -32,7 +32,9 @@ impl<T: Fn((f64, f64)) -> ()> SizeReceiver for T {
     }
 }
 
-pub fn observe_size_mixin<T: AsRef<Element> + Clone + 'static>(receiver: impl SizeReceiver  + 'static) -> impl FnOnce(DomBuilder<T>) -> DomBuilder<T> {
+pub fn observe_size_mixin<T: AsRef<Element> + Clone + 'static>(
+    receiver: impl SizeReceiver + 'static,
+) -> impl FnOnce(DomBuilder<T>) -> DomBuilder<T> {
     move |b| {
         let listener = Closure::<dyn FnMut(_)>::new(move |entries: Vec<ResizeObserverEntry>| {
             for entry in entries {
@@ -47,7 +49,7 @@ pub fn observe_size_mixin<T: AsRef<Element> + Clone + 'static>(receiver: impl Si
 
         let observer = Rc::new(ObserverWrapper {
             _listener: listener,
-            observer
+            observer,
         });
 
         with_node!(b, element => {
