@@ -23,10 +23,11 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
         .signal_vec_cloned()
         .filter_signal_cloned(move |color| color.is_tailwind_signal(curves.clone()));
 
-    let primary = Mutable::new(None::<PaletteColor>);
-    let text_on_primary = Mutable::new(None::<PaletteColor>);
-    let void = Mutable::new(None::<PaletteColor>);
-    let error = Mutable::new(None::<PaletteColor>);
+    let colors_lock = palette.colors.lock_ref();
+    let primary = Mutable::new(colors_lock.get(0).cloned());
+    let text_on_primary = Mutable::new(colors_lock.get(0).cloned());
+    let void = Mutable::new(colors_lock.get(0).cloned());
+    let error = Mutable::new(colors_lock.get(0).cloned());
 
     let colors_signal = map_ref! {
         let primary = primary.signal_cloned(),
