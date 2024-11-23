@@ -4,7 +4,6 @@ use glam::{Mat3, Vec2};
 use hsv::hsv_to_rgb;
 use js_sys::Math::sqrt;
 use serde::{Deserialize, Serialize};
-use std::f32::consts::PI;
 use std::str::FromStr;
 
 pub fn get_equidistant_points_in_range(start: f32, end: f32, count: usize) -> Vec<f32> {

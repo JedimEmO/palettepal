@@ -19,7 +19,7 @@ pub fn palette_controls(vm: PalettePalViewModel) -> Dom {
         .dwclass!("flex flex-col gap-2 pointer-events-auto align-items-center")
         .children([
             html!("div", {
-                .dwclass!("@>sm:w-md @<sm:w-sm flex @sm:flex-row @<sm:flex-col")
+                .dwclass!("@>sm:w-lg @<sm:w-sm flex @sm:flex-row @<sm:flex-col")
                 .dwclass!("flex @sm:flex-row @<sm:flex-col gap-4")
                 .children([
                     project_menu(vm.clone()),

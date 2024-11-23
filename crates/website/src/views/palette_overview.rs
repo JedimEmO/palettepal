@@ -15,7 +15,7 @@ pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("p-4 @>sm:w-md @<sm:w-sm flex flex-row justify-center gap-16")
+        .dwclass!("p-4 flex-1 flex-row flex justify-center gap-16")
         .child(preview_palette(palette.get_cloned()))
         .child(color_circle_preview(palette.get_cloned()))
     })

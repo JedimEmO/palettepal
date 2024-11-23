@@ -88,86 +88,86 @@ pub fn color_panel(
     };
 
     html!("div", {
-            .apply(panel_mixin)
-            .dwclass!("p-4 @sm:w-md @<sm:w-sm rounded")
+        .apply(panel_mixin)
+        .dwclass!("p-4 @md:w-64 @<md:w-sm rounded")
+        .child(html!("div", {
+            .dwclass!("grid")
             .child(html!("div", {
-                .dwclass!("grid")
+                .dwclass!("grid-col-1 grid-row-1")
+                .dwclass!("flex w-full flex-col align-items-start justify-center gap-4")
                 .child(html!("div", {
-                    .dwclass!("grid-col-1 grid-row-1")
-                    .dwclass!("flex w-full @sm:flex-row @<sm:flex-col @sm:align-items-start justify-center @<sm:align-items-center gap-4")
-                    .child(html!("div", {
-                        .dwclass!("flex flex-col gap-2")
-                        .children([
-                            color_cake(hue.clone(), color.clone(), &sampling_curves, (512,512)),
-                        ])
-                    }))
-                    .child(html!("div", {
-                        .dwclass!("flex flex-col gap-1")
-                        .children([
-                            text_input!({
-                                .label("Color name".to_string())
-                                .value(color.name.clone())
-                            }),
-                            slider!({
-                                .label("hue".to_string())
-                                .max(360.)
-                                .min(0.)
-                                .step(1.)
-                                .value(hue.clone())
-                            }),
-                            select!({
-                                .label("Sampler".to_string())
-                                .value(color.sampling_curve_id.clone())
-                                .options_signal_vec(sampling_curves.entries_cloned().map(|(key, curve)| {
-                                    (key.to_string(), curve.name.get_cloned())
-                                }).to_signal_cloned().to_signal_vec())
-                            }),
-                            select!({
-                                .label("Color Space".to_string())
-                                .value(color.color_space.clone())
-                                .options(vec![
-                                    ("HSV".to_string(), "HSV".to_string()),
-                                    ("HSL".to_string(), "HSL".to_string()),
-                                ])
-                            }),
-                            slider!({
-                                .label("Color plane angle".to_string())
-                                .max(360.0_f32)
-                                .min(-360.0_f32)
-                                .step(0.5)
-                                .value(color.color_plane_angle.clone())
-                            }),
-                        ])
-                    }))
+                    .dwclass!("flex flex-col gap-2")
+                    .children([
+                        color_cake(hue.clone(), color.clone(), &sampling_curves, (512,512)),
+                    ])
                 }))
                 .child(html!("div", {
-                    .dwclass!("grid-col-1 grid-row-1 flex justify-end pointer-events-none")
-                    .child(html!("div", {
-                        .dwclass!("pointer-events-auto flex flex-col")
-                        .children([
-                            svg_button(Icons::Copy, "Copy color settings", clone!(color => move |_| {
-                                COPIED_COLOR.set(Some(color.clone()));
-                            }), |b| b),
-                            svg_button(Icons::Paste, "Paste color settings", clone!(color => move |_| {
-                                let Some(copied) = COPIED_COLOR.get_cloned() else {
-                                    return;
-                                };
-
-                                color.sampling_curve_id.set(copied.sampling_curve_id.get());
-                                color.color_space.set(copied.color_space.get());
-                                color.sampling_rect.set(serde_json::from_str(&serde_json::to_string(&copied.sampling_rect.get_cloned()).unwrap()).unwrap());
-                            }), |b| {
-                                dwclass_signal!(b, "fill-woodsmoke-500", COPIED_COLOR.signal_cloned().map(|v| v.is_none()))
-                            }),
-                            svg_button(Icons::Edit, "Advanced settings", move |_| {
-                                    show_advanced.set(!show_advanced.get())
-                            },|b| b)
-                        ])
-                    }))
+                    .dwclass!("flex flex-col gap-1")
+                    .children([
+                        text_input!({
+                            .label("Color name".to_string())
+                            .value(color.name.clone())
+                        }),
+                        slider!({
+                            .label("hue".to_string())
+                            .max(360.)
+                            .min(0.)
+                            .step(1.)
+                            .value(hue.clone())
+                        }),
+                        select!({
+                            .label("Sampler".to_string())
+                            .value(color.sampling_curve_id.clone())
+                            .options_signal_vec(sampling_curves.entries_cloned().map(|(key, curve)| {
+                                (key.to_string(), curve.name.get_cloned())
+                            }).to_signal_cloned().to_signal_vec())
+                        }),
+                        select!({
+                            .label("Color Space".to_string())
+                            .value(color.color_space.clone())
+                            .options(vec![
+                                ("HSV".to_string(), "HSV".to_string()),
+                                ("HSL".to_string(), "HSL".to_string()),
+                            ])
+                        }),
+                        slider!({
+                            .label("Color plane angle".to_string())
+                            .max(360.0_f32)
+                            .min(-360.0_f32)
+                            .step(0.5)
+                            .value(color.color_plane_angle.clone())
+                        }),
+                    ])
                 }))
-                .child(horizontal_color_bar(shades_signal))
-                .child_signal(advanced_settings)
             }))
+            .child(html!("div", {
+                .dwclass!("grid-col-1 grid-row-1 flex justify-end pointer-events-none")
+                .child(html!("div", {
+                    .dwclass!("pointer-events-auto flex flex-col")
+                    .children([
+                        svg_button(Icons::Copy, "Copy color settings", clone!(color => move |_| {
+                            COPIED_COLOR.set(Some(color.clone()));
+                        }), |b| b),
+                        svg_button(Icons::Paste, "Paste color settings", clone!(color => move |_| {
+                            let Some(copied) = COPIED_COLOR.get_cloned() else {
+                                return;
+                            };
+
+                            color.sampling_curve_id.set(copied.sampling_curve_id.get());
+                            color.color_space.set(copied.color_space.get());
+                            color.sampling_rect.set(serde_json::from_str(&serde_json::to_string(&copied.sampling_rect.get_cloned()).unwrap()).unwrap());
+                        }), |b| {
+                            dwclass_signal!(b, "fill-woodsmoke-500", COPIED_COLOR.signal_cloned().map(|v| v.is_none()))
+                        }),
+                        svg_button(Icons::Edit, "Advanced settings", move |_| {
+                                show_advanced.set(!show_advanced.get())
+                        },|b| b)
+                    ])
+                }))
+            }))
+            .child(horizontal_color_bar(shades_signal))
+            .child_signal(advanced_settings)
+        }))
     })
 }
 

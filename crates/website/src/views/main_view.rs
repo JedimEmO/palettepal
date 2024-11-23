@@ -52,7 +52,6 @@ pub fn main_view() -> Dom {
 pub fn palette_view(vm: PalettePalViewModel) -> Dom {
     html!("div", {
         .dwclass!("flex flex-col gap-4 justify-center m-t-16")
-        .child(palette_overview(vm.clone()))
         .child_signal(vm.palette.signal_ref(clone!(vm => move |palette| {
             Some(html!("div", {
                 .dwclass!("flex flex-col gap-4 ")
@@ -105,11 +104,18 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                         })
                     })
                 }))
-                .child(dwui_example_container(palette.clone()))
+                .child(html!("div", {
+                    .dwclass!("flex @sm:flex-row @<sm:flex-col @md:w-lg @<md:w-sm")
+                    .child(palette_overview(vm.clone()))
+                    .child(dwui_example_container(palette.clone()))
+                }))
                 .child_signal(vm.show_sampling_curve_editor.signal().map(clone!(vm => move |v| if v { Some(sampling_curve_editor(vm.clone())) } else { None })))
-                .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
-                    color_panel(color, palette.sampling_curves.clone())
-                })))
+                .child(html!("div", {
+                    .dwclass!("flex flex-wrap @sm:flex-row @<sm:flex-col @md:w-lg @<md:w-sm")
+                    .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
+                        color_panel(color, palette.sampling_curves.clone())
+                    })))
+                }))
             }))
         })))
     })

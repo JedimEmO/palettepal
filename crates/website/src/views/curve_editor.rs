@@ -6,7 +6,6 @@ use crate::views::main_view::PalettePalViewModel;
 use dominator::events::MouseButton;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
-use dwind::prelude::*;
 use dwui::prelude::InputValueWrapper;
 use futures_signals::signal::{option, Mutable, ReadOnlyMutable, SignalExt};
 use futures_signals::signal_map::SignalMapExt;

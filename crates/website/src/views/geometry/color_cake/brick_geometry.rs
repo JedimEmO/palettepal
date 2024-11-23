@@ -1,5 +1,5 @@
 use crate::views::geometry::shader_program::ColorSpaceVertex;
-use glam::{Mat4, Vec2, Vec3};
+use glam::{Mat4, Vec3};
 
 pub fn brick_triangles(angle: f32) -> Vec<ColorSpaceVertex> {
     let back_y = angle.sin();
