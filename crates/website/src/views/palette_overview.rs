@@ -3,7 +3,6 @@ use crate::model::palette::Palette;
 use crate::views::main_view::PalettePalViewModel;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
-use dwui::prelude::*;
 use futures_signals::signal::{Mutable, SignalExt};
 use futures_signals::signal_vec::SignalVecExt;
 use std::rc::Rc;
@@ -15,7 +14,7 @@ pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("p-4 flex-1 flex-row flex justify-center gap-16")
+        .dwclass!("p-4 flex-col flex justify-center align-items-center gap-4")
         .child(preview_palette(palette.get_cloned()))
         .child(color_circle_preview(palette.get_cloned()))
     })
@@ -32,7 +31,7 @@ fn preview_palette(palette: Palette) -> Dom {
         }))
         .to_signal_cloned();
 
-    const PIXEL_SIZE: f64 = 40.;
+    const PIXEL_SIZE: f64 = 512. / 11.;
 
     html!("canvas" => HtmlCanvasElement, {
         .attr("width", "512")

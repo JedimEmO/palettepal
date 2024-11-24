@@ -1,5 +1,6 @@
+use std::rc::Rc;
 use crate::mixins::panel::panel_mixin;
-use crate::model::palette::{Palette};
+use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
 use dominator::text;
 use dominator::Dom;
@@ -7,21 +8,49 @@ use dominator::DomBuilder;
 use dwind::prelude::*;
 use dwui::prelude::*;
 use futures_signals::map_ref;
+use futures_signals::signal::{always, not, Signal};
 use futures_signals::signal::Mutable;
 use futures_signals::signal::SignalExt;
 use futures_signals::signal_vec::SignalVecExt;
-use web_sys::HtmlElement;
-use futures_signals::signal::not;
 use once_cell::sync::Lazy;
+use web_sys::HtmlElement;
 
 pub fn dwui_example_container(palette: Palette) -> Dom {
     let curves = palette.sampling_curves.clone();
     let sampling_curves = palette.sampling_curves.clone();
 
+    let palette = Rc::new(palette);
+
+    struct ColorAdapter {
+        palette: Rc<Palette>,
+        color: Mutable<Option<PaletteColor>>
+    }
+
+    impl InputValueWrapper for ColorAdapter {
+        fn set(&self, value: String) -> ValidationResult {
+            let Some(color) = self.palette.colors.lock_ref().iter().find(|v| v.name.get_cloned() == value).cloned() else {
+                return ValidationResult::Invalid { message: "invalid color".to_string() }
+            };
+
+            self.color.set(Some(color.clone()));
+
+            ValidationResult::Valid
+        }
+
+        fn value_signal_cloned(&self) -> impl Signal<Item=String> + 'static {
+            self.color.signal_cloned().map(|v| v.map(|v| v.name.signal_cloned().boxed()).unwrap_or(always("".to_string()).boxed())).flatten()
+        }
+    }
+
     let tailwind_colors = palette
         .colors
         .signal_vec_cloned()
-        .filter_signal_cloned(move |color| color.is_tailwind_signal(curves.clone()));
+        .filter_signal_cloned(move |color| color.is_tailwind_signal(curves.clone()))
+        .map_signal(|c| {
+            c.name.signal_cloned().map(|v| (v.clone(), v))
+        })
+        .to_signal_cloned()
+        .broadcast();
 
     let colors_lock = palette.colors.lock_ref();
     let primary = Mutable::new(colors_lock.get(0).cloned());
@@ -40,15 +69,15 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
 
     let color_variables_mixin = move |color: Option<PaletteColor>,
                                       color_name: String|
-          -> Box<
-        dyn FnOnce(DomBuilder<HtmlElement>) -> DomBuilder<HtmlElement>,
-    > {
+                                      -> Box<
+                                          dyn FnOnce(DomBuilder<HtmlElement>) -> DomBuilder<HtmlElement>,
+                                      > {
         let Some(color) = color else {
             return Box::new(|b| b);
         };
 
         Box::new(
-            clone!(color, sampling_curves => move |mut b: DomBuilder<HtmlElement>| {
+            clone!(color, sampling_curves => move |b: DomBuilder<HtmlElement>| {
                 let colors = color.colors_u8_signal(&sampling_curves).broadcast();
 
                 b
@@ -70,77 +99,46 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
     let light_mode = Mutable::new(false);
 
     html!("div", {
+        .dwclass!("flex-1")
         .apply(panel_mixin)
         .children([
             // All colors, with type association
             html!("div", {
                 .dwclass!("flex flex-col gap-4")
                 .child(html!("div", {
+                    .dwclass!("flex flex-row gap-4")
+                    .dwclass!("[& > :not(:nth-child(1))]:w-40")
                     .children([
                         button!({
-                            .apply(|b| dwclass!(b, "w-60"))
+                            .apply(|b| dwclass!(b, "w-32"))
                             .content_signal(light_mode.signal().map(|m| {
                                 text(if m { "Dark mode" } else { "Light Mode"})
                             }).map(Some))
                             .on_click(clone!(light_mode => move |_| {
                                 light_mode.set(!light_mode.get());
                             }))
+                        }),
+                        select!({
+                            .label("Primary".to_string())
+                            .value(ColorAdapter {palette: palette.clone(), color: primary })
+                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
+                        }),
+                        select!({
+                            .label("Void".to_string())
+                            .value(ColorAdapter {palette: palette.clone(), color: void })
+                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
+                        }),
+                        select!({
+                            .label("Text on Primary".to_string())
+                            .value(ColorAdapter {palette: palette.clone(), color: text_on_primary })
+                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
+                        }),
+                        select!({
+                            .label("Error".to_string())
+                            .value(ColorAdapter {palette: palette.clone(), color: error })
+                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
                         })
                     ])
-                }))
-                .child(html!("table", {
-                    .dwclass!("text-woodsmoke-400 divide-y border-collapse border-woodsmoke-900 w-full text-left text-sm")
-                    .child(html!("tr", {
-                        .children([
-                            html!("th", {
-                                .dwclass!("p-b-2")
-                                .text("Color name")
-                            }),
-                            html!("th", {
-                                .dwclass!("p-b-2")
-                                .text("Assignment")
-                            }),
-                        ])
-                    }))
-                    .children_signal_vec(tailwind_colors.map(move |color| {
-                        html!("tr", {
-                            .dwclass!("border-woodsmoke-900")
-                            .children([
-                                html!("td", {
-                                    .dwclass!("w-60")
-                                    .dwclass!("text-picton-blue-400 font-bold font-mono")
-                                    .text_signal(color.name.signal_cloned())
-                                }),
-                                html!("td", {
-                                    .dwclass!("flex flex-row gap-4 align-items-center")
-                                    .dwclass!("[& > *]:p-l-2 [& > *]:p-r-2")
-                                    .dwclass!("flex flex-row gap-4")
-                                    .children([
-                                        button!({
-                                            .apply(|b| dwclass!(b, "w-24"))
-                                            .content(Some(text("Primary")))
-                                            .on_click(clone!(color, primary => move |_| { primary.set(Some(color.clone())) }))
-                                        }),
-                                        button!({
-                                            .apply(|b| dwclass!(b, "w-40"))
-                                            .content(Some(text("Text on Primary")))
-                                            .on_click(clone!(color, text_on_primary => move |_| { text_on_primary.set(Some(color.clone())) }))
-                                        }),
-                                        button!({
-                                            .apply(|b| dwclass!(b, "w-24"))
-                                            .content(Some(text("Void")))
-                                            .on_click(clone!(color, void => move |_| { void.set(Some(color.clone())) }))
-                                        }),
-                                        button!({
-                                            .apply(|b| dwclass!(b, "w-24"))
-                                            .content(Some(text("Error")))
-                                            .on_click(clone!(color, error => move |_| { error.set(Some(color.clone())) }))
-                                        })
-                                    ])
-                                })
-                            ])
-                        })
-                    }))
                 }))
             })
         ])
@@ -158,14 +156,14 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
 }
 static SCHEME_CLASS: Lazy<String> = Lazy::new(|| {
     class! {
-            .raw("background: var(--dwui-void-950)")
-        }
+        .raw("background: var(--dwui-void-950)")
+    }
 });
 
 static SCHEME_CLASS_LIGHT: Lazy<String> = Lazy::new(|| {
     class! {
-            .raw("background: var(--dwui-void-300)")
-        }
+        .raw("background: var(--dwui-void-300)")
+    }
 });
 
 fn example_ui(light: &Mutable<bool>) -> Dom {

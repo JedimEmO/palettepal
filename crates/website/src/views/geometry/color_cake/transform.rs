@@ -128,9 +128,6 @@ impl Transform {
 
     pub fn brick_transform() -> Self {
         let screen_size = Vec2::new(512., 512.);
-        let rot_mat = Mat4::from_rotation_y(45.);
-
-        let mat = rot_mat;
 
         Self {
             viewport: Mat4::from_cols_array(&[
