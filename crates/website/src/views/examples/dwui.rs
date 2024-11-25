@@ -117,9 +117,9 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
         .children([
             // All colors, with type association
             html!("div", {
-                .dwclass!("flex flex-col gap-4")
+                .dwclass!("flex flex-col gap-2 p-4")
                 .child(html!("div", {
-                    .dwclass!("flex flex-row gap-4")
+                    .dwclass!("flex flex-row gap-2")
                     .dwclass!("[& > :not(:nth-child(1))]:w-40")
                     .children([
                         button!({

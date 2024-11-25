@@ -70,9 +70,15 @@ fn color_circle_preview(palette: Palette) -> Dom {
         clone!(dragging_hue, palette => move |x: f32, y: f32, all: bool| {
             if let Some(hue) = dragging_hue.get_cloned() {
                 let dx = x  - 256.;
-                let dy = y - 256.;
-                let angle = dy.atan2(dx).to_degrees();
+                let dy =  y - 256.;
+                let mut angle = dy.atan2(dx).to_degrees();
                 let old_angle = hue.get();
+
+                if angle < 0. {
+                    angle += 360.;
+                }
+
+                angle = angle.rem_euclid(360.).floor();
 
                 if all {
                     for color in palette.colors.lock_mut().iter() {
