@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
@@ -8,11 +7,12 @@ use dominator::DomBuilder;
 use dwind::prelude::*;
 use dwui::prelude::*;
 use futures_signals::map_ref;
-use futures_signals::signal::{always, not, Signal};
 use futures_signals::signal::Mutable;
 use futures_signals::signal::SignalExt;
+use futures_signals::signal::{always, not, Signal};
 use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
+use std::rc::Rc;
 use web_sys::HtmlElement;
 
 pub fn dwui_example_container(palette: Palette) -> Dom {
@@ -23,13 +23,22 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
 
     struct ColorAdapter {
         palette: Rc<Palette>,
-        color: Mutable<Option<PaletteColor>>
+        color: Mutable<Option<PaletteColor>>,
     }
 
     impl InputValueWrapper for ColorAdapter {
         fn set(&self, value: String) -> ValidationResult {
-            let Some(color) = self.palette.colors.lock_ref().iter().find(|v| v.name.get_cloned() == value).cloned() else {
-                return ValidationResult::Invalid { message: "invalid color".to_string() }
+            let Some(color) = self
+                .palette
+                .colors
+                .lock_ref()
+                .iter()
+                .find(|v| v.name.get_cloned() == value)
+                .cloned()
+            else {
+                return ValidationResult::Invalid {
+                    message: "invalid color".to_string(),
+                };
             };
 
             self.color.set(Some(color.clone()));
@@ -37,8 +46,14 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
             ValidationResult::Valid
         }
 
-        fn value_signal_cloned(&self) -> impl Signal<Item=String> + 'static {
-            self.color.signal_cloned().map(|v| v.map(|v| v.name.signal_cloned().boxed()).unwrap_or(always("".to_string()).boxed())).flatten()
+        fn value_signal_cloned(&self) -> impl Signal<Item = String> + 'static {
+            self.color
+                .signal_cloned()
+                .map(|v| {
+                    v.map(|v| v.name.signal_cloned().boxed())
+                        .unwrap_or(always("".to_string()).boxed())
+                })
+                .flatten()
         }
     }
 
@@ -46,9 +61,7 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
         .colors
         .signal_vec_cloned()
         .filter_signal_cloned(move |color| color.is_tailwind_signal(curves.clone()))
-        .map_signal(|c| {
-            c.name.signal_cloned().map(|v| (v.clone(), v))
-        })
+        .map_signal(|c| c.name.signal_cloned().map(|v| (v.clone(), v)))
         .to_signal_cloned()
         .broadcast();
 
@@ -69,9 +82,9 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
 
     let color_variables_mixin = move |color: Option<PaletteColor>,
                                       color_name: String|
-                                      -> Box<
-                                          dyn FnOnce(DomBuilder<HtmlElement>) -> DomBuilder<HtmlElement>,
-                                      > {
+          -> Box<
+        dyn FnOnce(DomBuilder<HtmlElement>) -> DomBuilder<HtmlElement>,
+    > {
         let Some(color) = color else {
             return Box::new(|b| b);
         };
@@ -81,17 +94,17 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
                 let colors = color.colors_u8_signal(&sampling_curves).broadcast();
 
                 b
-                .style_signal(format!("--dwui-{color_name}-50"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[0].0, c[0].1, c[0].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-100"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[1].0, c[1].1, c[1].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-200"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[2].0, c[2].1, c[2].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-300"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[3].0, c[3].1, c[3].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-400"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[4].0, c[4].1, c[4].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-500"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[5].0, c[5].1, c[5].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-600"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[6].0, c[6].1, c[6].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-700"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[7].0, c[7].1, c[7].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-800"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[8].0, c[8].1, c[8].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-900"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[9].0, c[9].1, c[9].2).display_rgba())))
-                .style_signal(format!("--dwui-{color_name}-950"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c[10].0, c[10].1, c[10].2).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-50"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(0).map(|c| c.0).unwrap_or(0), c.get(0).map(|c| c.1).unwrap_or(0), c.get(0).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-100"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(1).map(|c| c.0).unwrap_or(0), c.get(1).map(|c| c.1).unwrap_or(0), c.get(1).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-200"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(2).map(|c| c.0).unwrap_or(0), c.get(2).map(|c| c.1).unwrap_or(0), c.get(2).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-300"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(3).map(|c| c.0).unwrap_or(0), c.get(3).map(|c| c.1).unwrap_or(0), c.get(3).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-400"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(4).map(|c| c.0).unwrap_or(0), c.get(4).map(|c| c.1).unwrap_or(0), c.get(4).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-500"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(5).map(|c| c.0).unwrap_or(0), c.get(5).map(|c| c.1).unwrap_or(0), c.get(5).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-600"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(6).map(|c| c.0).unwrap_or(0), c.get(6).map(|c| c.1).unwrap_or(0), c.get(6).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-700"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(7).map(|c| c.0).unwrap_or(0), c.get(7).map(|c| c.1).unwrap_or(0), c.get(7).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-800"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(8).map(|c| c.0).unwrap_or(0), c.get(8).map(|c| c.1).unwrap_or(0), c.get(8).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-900"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(9).map(|c| c.0).unwrap_or(0), c.get(9).map(|c| c.1).unwrap_or(0), c.get(9).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-950"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(10).map(|c| c.0).unwrap_or(0), c.get(10).map(|c| c.1).unwrap_or(0), c.get(10).map(|c| c.2).unwrap_or(0)).display_rgba())))
             }),
         )
     };
