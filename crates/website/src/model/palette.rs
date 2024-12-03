@@ -21,9 +21,14 @@ impl Palette {
         sampling_curves
             .lock_mut()
             .insert_cloned(Uuid::nil(), SamplingCurve::tailwind_happy());
+
         sampling_curves
             .lock_mut()
             .insert_cloned(Uuid::from_u128(1), SamplingCurve::tailwind_diagonal());
+
+        sampling_curves
+            .lock_mut()
+            .insert_cloned(Uuid::from_u128(2), SamplingCurve::pixelart_5());
 
         Self {
             colors,

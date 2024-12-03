@@ -8,11 +8,11 @@ members = ["crates/website"]
 anyhow = "1.0.86"
 colors-transform = "0.2.11"
 dominator = "0.5.36"
-dominator-css-bindgen = { git = "https://github.com/JedimEmO/dwind.git", rev = "8484de9b3bda70e8fd434d45efca509afd1dc38b" }
-dwind = { git = "https://github.com/JedimEmO/dwind.git", rev = "8484de9b3bda70e8fd434d45efca509afd1dc38b" }
-dwind-build = { git = "https://github.com/JedimEmO/dwind.git", rev = "8484de9b3bda70e8fd434d45efca509afd1dc38b" }
-dwui = { git = "https://github.com/JedimEmO/dwind.git", rev = "8484de9b3bda70e8fd434d45efca509afd1dc38b" }
-dwind-macros = { git = "https://github.com/JedimEmO/dwind.git", rev = "8484de9b3bda70e8fd434d45efca509afd1dc38b" }
+dominator-css-bindgen = "0.1"
+dwind = "0.1"
+dwind-build = "0.1"
+dwui = "0.1"
+dwind-macros = "0.1"
 futures = "0.3.30"
 futures-signals = "0.3.34"
 glam = { version = "0.29.2", features = ["serde"] }

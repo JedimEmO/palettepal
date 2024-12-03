@@ -23,49 +23,6 @@ pub fn algebraic_simple(x: f64) -> f64 {
     x / sqrt(1. + x.powi(2))
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum ColorSampler {
-    Sigmoid { amplification: Mutable<f32> },
-    Diagonal,
-    DwindCurve,
-    DwindCurve2,
-}
-
-impl Default for ColorSampler {
-    fn default() -> Self {
-        Self::Sigmoid {
-            amplification: 4.0.into(),
-        }
-    }
-}
-
-impl ToString for ColorSampler {
-    fn to_string(&self) -> String {
-        match self {
-            Self::Sigmoid { .. } => "Sigmoid".to_string(),
-            Self::Diagonal => "Diagonal".to_string(),
-            Self::DwindCurve => "DwindCurve".to_string(),
-            Self::DwindCurve2 => "DwindCurve2".to_string(),
-        }
-    }
-}
-
-impl FromStr for ColorSampler {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Sigmoid" => Ok(Self::Sigmoid {
-                amplification: Mutable::new(4.),
-            }),
-            "Diagonal" => Ok(Self::Diagonal),
-            "DwindCurve" => Ok(Self::DwindCurve),
-            "DwindCurve2" => Ok(Self::DwindCurve2),
-            _ => Err(()),
-        }
-    }
-}
-
 /// Defines the rectangle within a color plane for which the sampling method applies.
 /// The sampling coordinate space (0..1, 0..1) is in this rectangles local coordinate system
 ///
