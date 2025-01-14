@@ -8,18 +8,22 @@ use dwind::prelude::*;
 use dwui::prelude::*;
 use dwui::{select, slider};
 use futures_signals::map_ref;
-use futures_signals::signal::{Mutable, Signal, SignalExt};
-use futures_signals::signal_map::MutableBTreeMap;
+use futures_signals::signal::{option, Mutable, Signal, SignalExt};
+use futures_signals::signal_map::{MutableBTreeMap, SignalMapExt};
 use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
 use std::f32::consts::PI;
 use uuid::Uuid;
+use crate::model::palette::Palette;
+use crate::model::sampling::static_sample_signal;
+use crate::views::curve_editor::curve_editor_inner;
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
 pub fn color_panel(
     color: PaletteColor,
     sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
+    palette: Palette
 ) -> Dom {
     let hue: Mutable<f32> = color.hue.clone();
     let hue2: Mutable<f32> = color.hue.clone();
@@ -89,12 +93,12 @@ pub fn color_panel(
 
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("p-4 @md:w-64 @<md:w-sm rounded")
+        .dwclass!("p-2 @md:w-md @<md:w-sm rounded")
         .child(html!("div", {
             .dwclass!("grid")
             .child(html!("div", {
                 .dwclass!("grid-col-1 grid-row-1")
-                .dwclass!("flex w-full flex-col align-items-start justify-center gap-4")
+                .dwclass!("flex w-full @<sm:flex-col @sm:flex-row align-items-start @<sm:justify-center @sm:justify-start gap-1")
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
                     .children([
@@ -139,6 +143,7 @@ pub fn color_panel(
                         }),
                     ])
                 }))
+                .child(color_edit(color.clone(), sampling_curves.clone(), palette))
             }))
             .child(html!("div", {
                 .dwclass!("grid-col-1 grid-row-1 flex justify-end pointer-events-none")
@@ -172,6 +177,63 @@ pub fn color_panel(
             .child(horizontal_color_bar(shades_signal))
             .child_signal(advanced_settings)
         }))
+    })
+}
+
+fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>, palette: Palette) -> Dom {
+    let curves = sampling_curves.clone();
+    let curve_id = color.sampling_curve_id.clone();
+
+    let sampled_colors_signal = map_ref! {
+        let curve_id = color.sampling_curve_id.signal(),
+        let _angle = color.color_plane_angle.signal_cloned(),
+        let _hue = color.hue.signal_cloned(),
+        let sampling_rect = color.sampling_rect.signal_cloned() => move {
+            sampling_curves
+                .signal_map_cloned()
+                .key_cloned(*curve_id)
+            .map(clone!(color, sampling_rect => move |sampling_curve| {
+                option(sampling_curve.map(clone!(color, sampling_rect => move |curve| {
+                    static_sample_signal(sampling_rect.matrices_signal(), curve.curve.signal_cloned())
+                        .map(move |curve_coords| color.colors_u8(&curve_coords))
+                })))
+            })).flatten()
+            .map(|v| {
+                v.unwrap_or(vec![])
+            })
+        }
+    }
+    .flatten()
+    .to_signal_vec()
+    .map(|(r, g, b)| {
+        html!("div", {
+            .text(&format!("{r:X}{g:X}{b:X}"))
+        })
+    });
+
+    let sampling_curve_signal = curve_id.signal().map(move |id| {
+        curves.signal_map_cloned().key_cloned(id)
+    }).flatten();
+
+    let editor = sampling_curve_signal.map(move |curve| {
+        curve.map(clone!(palette => move |curve| {
+            html!("div", {
+                .dwclass!("w-64 h-64")
+                .child(curve_editor_inner(curve, palette, false))
+            })
+        }))
+    });
+
+
+    let color_list = html!("div", {
+        .dwclass!("flex flex-col gap-2")
+        .children_signal_vec(sampled_colors_signal)
+    });
+
+    html!("div", {
+        .dwclass!("flex flex-row gap-2")
+        .child_signal(editor)
+        .child(color_list)
     })
 }
 

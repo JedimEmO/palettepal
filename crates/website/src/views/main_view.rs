@@ -38,27 +38,27 @@ pub fn main_view() -> Dom {
     let inner = menu_overlay(
         always(palette_controls(vm.clone())),
         always(html!("div", {
-            .dwclass!("flex justify-center w-full h-screen align-items-start")
+            .dwclass!("flex justify-start w-full h-screen align-items-start")
             .child(palette_view(vm))
         })),
     );
 
     html!("div", {
-        .dwclass!("linear-gradient-180 gradient-from-woodsmoke-700 gradient-to-woodsmoke-950")
+        .dwclass!("linear-gradient-180 gradient-from-woodsmoke-700 gradient-to-woodsmoke-950 ")
         .child(inner)
     })
 }
 
 pub fn palette_view(vm: PalettePalViewModel) -> Dom {
     html!("div", {
-        .dwclass!("flex flex-col gap-4 justify-center m-t-16")
+        .dwclass!("flex flex-col gap-4 justify-center m-t-16 w-full")
         .child_signal(vm.palette.signal_ref(clone!(vm => move |palette| {
             Some(html!("div", {
                 .dwclass!("flex flex-col gap-4 ")
                 .child_signal(vm.export_file_content.signal_cloned().map( move |content| {
                     content.map(|content| {html!("div", {
                         .apply(panel_mixin)
-                        .dwclass!("p-4 overflow-auto @>sm:w-md @<sm:w-sm max-h-64")
+                        .dwclass!("p-4 overflow-auto @>sm:w-full @<sm:w-sm max-h-64")
                         .child(html!("pre", {
                             .text(&content)
                         }))
@@ -77,7 +77,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
 
                         html!("div", {
                             .apply(panel_mixin)
-                            .dwclass!("p-4 @>sm:w-md @<sm:w-sm")
+                            .dwclass!("p-4 @>sm:w-full @<sm:w-sm")
                             .child(html!("canvas" => HtmlCanvasElement, {
                                 .dwclass!("w-full h-12")
                                 .style("image-rendering", "pixelated")
@@ -105,15 +105,15 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                     })
                 }))
                 .child(html!("div", {
-                    .dwclass!("flex @sm:flex-row @<sm:flex-col @md:w-lg @<md:w-sm")
+                    .dwclass!("flex @sm:flex-row @<sm:flex-col @>sm:w-full @<md:w-sm")
                     .child(palette_overview(vm.clone()))
                     .child(dwui_example_container(palette.clone()))
                 }))
                 .child_signal(vm.show_sampling_curve_editor.signal().map(clone!(vm => move |v| if v { Some(sampling_curve_editor(vm.clone())) } else { None })))
                 .child(html!("div", {
-                    .dwclass!("flex flex-wrap @sm:flex-row @<sm:flex-col @md:w-lg @<md:w-sm")
+                    .dwclass!("flex flex-wrap @sm:flex-row @<sm:flex-col @md:w-full @<md:w-sm")
                     .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
-                        color_panel(color, palette.sampling_curves.clone())
+                        color_panel(color, palette.sampling_curves.clone(), palette.clone())
                     })))
                 }))
             }))

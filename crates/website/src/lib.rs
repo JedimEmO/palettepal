@@ -15,8 +15,9 @@ pub mod model;
 pub mod views;
 pub mod widgets;
 
+use std::ptr::replace;
 use crate::views::main_view::main_view;
-use dominator::{append_dom, body, stylesheet};
+use dominator::{append_dom, body, replace_dom, stylesheet};
 use dwind::colors::DWIND_COLORS;
 use dwui::theme::colors::ColorsCssVariables;
 use log::Level;
@@ -37,5 +38,5 @@ async fn main() {
         .style("background-color", &dwind::colors::DWIND_COLORS["woodsmoke"][&900])
     });
 
-    append_dom(&body(), main_view());
+    replace_dom(&body().parent_node().unwrap(), &body(), main_view());
 }

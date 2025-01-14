@@ -73,19 +73,19 @@ fn curve_editor(palette: Palette, current_curve_id: ReadOnlyMutable<Uuid>) -> im
             return None;
         };
 
-        Some(curve_editor_inner(curve, palette.clone()))
+        Some(curve_editor_inner(curve, palette.clone(), true))
     }))
 }
 
-fn curve_editor_inner(curve: SamplingCurve, palette: Palette) -> Dom {
+pub fn curve_editor_inner(curve: SamplingCurve, palette: Palette, meta_info: bool) -> Dom {
     let rect_sample_space_curve = curve.curve.signal_cloned();
 
     let rect_size = Mutable::new((0., 0.));
     let dragging_idx: Mutable<Option<usize>> = Mutable::new(None);
 
     html!("div", {
-        .dwclass!("flex gap-4 w-full p-4")
-        .child(html!("div", {
+        .dwclass!("flex gap-4 w-full")
+        .apply_if(meta_info, |b| b.child(html!("div", {
             .dwclass!("flex-initial w-60 flex flex-col gap-4")
             .children([
                 text_input!({
@@ -101,7 +101,7 @@ fn curve_editor_inner(curve: SamplingCurve, palette: Palette) -> Dom {
                     .text(if len == 11 { "tailwind compatible" } else { "not tailwind compatible" })
                 }))
             }))
-        }))
+        })))
         .child(html!("div", {
             .dwclass!("bg-picton-blue-500 aspect-square max-w-80")
             .apply(observe_size_mixin(rect_size.clone()))
