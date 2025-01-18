@@ -2,7 +2,7 @@
 
 resolver = "2"
 
-members = ["crates/website"]
+members = [ "crates/domain/color","crates/website"]
 
 [workspace.dependencies]
 anyhow = "1.0.86"

@@ -1,4 +1,4 @@
-use crate::views::geometry::shader_program::{ColorSpaceVertex, GeometryIndex, ShaderProgram};
+use crate::views::geometry::shader_program::{ColorSpaceVertex, ShaderProgram};
 use crate::widgets::shader_canvas::*;
 use anyhow::anyhow;
 use dominator::Dom;
@@ -41,17 +41,11 @@ impl ColorQuad {
             },
         ];
 
-        let geometries = vec![GeometryIndex::Triangles {
-            start_index: 0,
-            count: vertices.len(),
-        }];
-
         let shader_program = ShaderProgram::new(
             context,
             include_str!("vertex.glsl"),
             include_str!("fragment.glsl"),
-            vertices,
-            geometries,
+            vertices
         )?;
 
         Ok(Self { shader_program })
@@ -64,12 +58,12 @@ impl ColorQuad {
         resolution: (f32, f32),
     ) -> anyhow::Result<()> {
         let program = &self.shader_program.program;
-        context.use_program(Some(&program));
+        context.use_program(Some(program));
 
-        let position_location = context.get_attrib_location(&program, "a_position");
-        let color_location = context.get_attrib_location(&program, "a_color");
-        let resolution_location = context.get_uniform_location(&program, "u_resolution");
-        let hue_location = context.get_uniform_location(&program, "u_hue");
+        let position_location = context.get_attrib_location(program, "a_position");
+        let color_location = context.get_attrib_location(program, "a_color");
+        let resolution_location = context.get_uniform_location(program, "u_resolution");
+        let hue_location = context.get_uniform_location(program, "u_hue");
         let buffer = context
             .create_buffer()
             .ok_or(anyhow!("failed to create buffer"))?;
@@ -77,7 +71,7 @@ impl ColorQuad {
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
 
         WebGl2RenderingContext::uniform2f(
-            &context,
+            context,
             resolution_location.as_ref(),
             resolution.0,
             resolution.1,
@@ -85,7 +79,7 @@ impl ColorQuad {
 
         unsafe {
             let position_view = js_sys::Float32Array::view_mut_raw(
-                (&mut self.shader_program.vertices).as_mut_ptr() as *mut f32,
+                self.shader_program.vertices.as_mut_ptr() as *mut f32,
                 self.shader_program.vertices.len() * size_of::<ColorSpaceVertex>(),
             );
             context.buffer_data_with_array_buffer_view(
@@ -124,7 +118,7 @@ impl ColorQuad {
 
         let vertex_count = self.shader_program.vertices.len() as i32;
 
-        WebGl2RenderingContext::uniform1f(&context, hue_location.as_ref(), hue);
+        WebGl2RenderingContext::uniform1f(context, hue_location.as_ref(), hue);
 
         context.clear_color(0.0, 0.0, 0.0, 1.0);
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);

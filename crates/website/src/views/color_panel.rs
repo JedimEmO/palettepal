@@ -14,16 +14,14 @@ use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
 use std::f32::consts::PI;
 use uuid::Uuid;
-use crate::model::palette::Palette;
 use crate::model::sampling::static_sample_signal;
-use crate::views::curve_editor::curve_editor_inner;
+use crate::views::tools::curve_editor::curve_editor_inner;
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
 pub fn color_panel(
     color: PaletteColor,
-    sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
-    palette: Palette
+    sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>
 ) -> Dom {
     let hue: Mutable<f32> = color.hue.clone();
     let hue2: Mutable<f32> = color.hue.clone();
@@ -93,12 +91,12 @@ pub fn color_panel(
 
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("p-2 @md:w-md @<md:w-sm rounded")
+        .dwclass!("p-2 flex-auto @md:max-w-p-50 @<md:max-w-p-50 @<sm:min-w-p-100")
         .child(html!("div", {
             .dwclass!("grid")
             .child(html!("div", {
                 .dwclass!("grid-col-1 grid-row-1")
-                .dwclass!("flex w-full @<sm:flex-col @sm:flex-row align-items-start @<sm:justify-center @sm:justify-start gap-1")
+                .dwclass!("flex @<lg:flex-col @lg:flex-row @<lg:align-items-center justify-start @lg:justify-start gap-1")
                 .child(html!("div", {
                     .dwclass!("flex flex-col gap-2")
                     .children([
@@ -143,7 +141,7 @@ pub fn color_panel(
                         }),
                     ])
                 }))
-                .child(color_edit(color.clone(), sampling_curves.clone(), palette))
+                .child(color_edit(color.clone(), sampling_curves.clone()))
             }))
             .child(html!("div", {
                 .dwclass!("grid-col-1 grid-row-1 flex justify-end pointer-events-none")
@@ -180,7 +178,7 @@ pub fn color_panel(
     })
 }
 
-fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>, palette: Palette) -> Dom {
+fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>) -> Dom {
     let curves = sampling_curves.clone();
     let curve_id = color.sampling_curve_id.clone();
 
@@ -199,7 +197,7 @@ fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, Sampli
                 })))
             })).flatten()
             .map(|v| {
-                v.unwrap_or(vec![])
+                v.unwrap_or_default()
             })
         }
     }
@@ -216,12 +214,12 @@ fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, Sampli
     }).flatten();
 
     let editor = sampling_curve_signal.map(move |curve| {
-        curve.map(clone!(palette => move |curve| {
+        curve.map(move |curve| {
             html!("div", {
                 .dwclass!("w-64 h-64")
-                .child(curve_editor_inner(curve, palette, false))
+                .child(curve_editor_inner(curve, false))
             })
-        }))
+        })
     });
 
 

@@ -17,17 +17,17 @@ impl<T> Drop for ObserverWrapper<T> {
 }
 
 pub trait SizeReceiver {
-    fn new_size(&self, size: (f64, f64)) -> ();
+    fn new_size(&self, size: (f64, f64));
 }
 
 impl SizeReceiver for Mutable<(f64, f64)> {
-    fn new_size(&self, size: (f64, f64)) -> () {
+    fn new_size(&self, size: (f64, f64)) {
         self.set(size)
     }
 }
 
-impl<T: Fn((f64, f64)) -> ()> SizeReceiver for T {
-    fn new_size(&self, size: (f64, f64)) -> () {
+impl<T: Fn((f64, f64))> SizeReceiver for T {
+    fn new_size(&self, size: (f64, f64)) {
         self(size)
     }
 }

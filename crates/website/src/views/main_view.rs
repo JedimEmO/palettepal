@@ -1,10 +1,8 @@
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
 use crate::views::color_panel::color_panel;
-use crate::views::curve_editor::sampling_curve_editor;
-use crate::views::examples::dwui::dwui_example_container;
+use crate::views::tools::curve_editor::sampling_curve_editor;
 use crate::views::palette_controls::palette_controls;
-use crate::views::palette_overview::palette_overview;
 use crate::widgets::menu_overlay::menu_overlay;
 use dominator::Dom;
 use dwind::prelude::*;
@@ -13,6 +11,7 @@ use futures_signals::signal_vec::SignalVecExt;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use crate::views::tools::ToolsViewState;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PalettePalViewModel {
@@ -20,6 +19,7 @@ pub struct PalettePalViewModel {
     pub palette: Mutable<Palette>,
     pub export_file_content: Mutable<Option<String>>,
     pub export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>>,
+    pub tools_view_state: ToolsViewState
 }
 
 pub fn main_view() -> Dom {
@@ -33,6 +33,7 @@ pub fn main_view() -> Dom {
         palette,
         export_file_content,
         export_image_content,
+        tools_view_state: Default::default(),
     };
 
     let inner = menu_overlay(
@@ -43,8 +44,8 @@ pub fn main_view() -> Dom {
         })),
     );
 
-    html!("div", {
-        .dwclass!("linear-gradient-180 gradient-from-woodsmoke-700 gradient-to-woodsmoke-950 ")
+    html!("body", {
+        .dwclass!("bg-woodsmoke-950")
         .child(inner)
     })
 }
@@ -54,7 +55,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
         .dwclass!("flex flex-col gap-4 justify-center m-t-16 w-full")
         .child_signal(vm.palette.signal_ref(clone!(vm => move |palette| {
             Some(html!("div", {
-                .dwclass!("flex flex-col gap-4 ")
+                .dwclass!("flex flex-row gap-4 flex-wrap flex-auto")
                 .child_signal(vm.export_file_content.signal_cloned().map( move |content| {
                     content.map(|content| {html!("div", {
                         .apply(panel_mixin)
@@ -68,7 +69,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                 // 1 row per color
                 .child_signal(vm.export_image_content.signal_cloned().map(move |content| {
                     content.map(|content| {
-                        if content.len() == 0 || content[0].len() == 0 {
+                        if content.is_empty() || content[0].is_empty() {
                             return html!("div", {})
                         }
 
@@ -104,16 +105,12 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                         })
                     })
                 }))
-                .child(html!("div", {
-                    .dwclass!("flex @sm:flex-row @<sm:flex-col @>sm:w-full @<md:w-sm")
-                    .child(palette_overview(vm.clone()))
-                    .child(dwui_example_container(palette.clone()))
-                }))
+                .children_signal_vec(vm.tools_view_state.tools_children_signal(vm.clone()))
                 .child_signal(vm.show_sampling_curve_editor.signal().map(clone!(vm => move |v| if v { Some(sampling_curve_editor(vm.clone())) } else { None })))
                 .child(html!("div", {
-                    .dwclass!("flex flex-wrap @sm:flex-row @<sm:flex-col @md:w-full @<md:w-sm")
+                    .dwclass!("flex flex-wrap flex-row w-full")
                     .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
-                        color_panel(color, palette.sampling_curves.clone(), palette.clone())
+                        color_panel(color, palette.sampling_curves.clone())
                     })))
                 }))
             }))

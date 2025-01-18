@@ -95,7 +95,6 @@ impl SamplingCurve {
         Self {
             name: "Tailwind Diagonal".to_string().into(),
             curve: (0..11)
-                .into_iter()
                 .map(|v| {
                     let x = v as f32 / 11.;
 

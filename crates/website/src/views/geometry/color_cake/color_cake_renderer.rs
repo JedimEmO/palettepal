@@ -2,7 +2,7 @@ use crate::model::palette_color::{CakeType, ColorSpace};
 use crate::views::geometry::color_cake::brick_geometry::brick_triangles;
 use crate::views::geometry::cylinder_geometry;
 use crate::views::geometry::cylinder_geometry::make_cylinder;
-use crate::views::geometry::shader_program::{GeometryIndex, ShaderProgram};
+use crate::views::geometry::shader_program::ShaderProgram;
 use crate::views::geometry::transform::Transform;
 use anyhow::anyhow;
 use futures_signals::signal::Mutable;
@@ -21,21 +21,6 @@ impl ColorCake {
         let mut top_disk = cylinder_geometry::cylinder_top(true, 0.);
         let mut bottom_disk = cylinder_geometry::cylinder_top(false, 0.);
 
-        let mut geometries = vec![];
-
-        geometries.push(GeometryIndex::Triangles {
-            start_index: 0,
-            count: bottom_disk.len(),
-        });
-        geometries.push(GeometryIndex::Triangles {
-            start_index: bottom_disk.len(),
-            count: sides.len(),
-        });
-        geometries.push(GeometryIndex::Triangles {
-            start_index: bottom_disk.len() + sides.len(),
-            count: top_disk.len(),
-        });
-
         let mut vertices = vec![];
 
         vertices.append(&mut bottom_disk);
@@ -47,7 +32,6 @@ impl ColorCake {
             include_str!("shaders/cake_vertex.glsl"),
             include_str!("shaders/cake_fragment.glsl"),
             vertices,
-            geometries,
         )?;
 
         Ok(Self {
@@ -69,13 +53,13 @@ impl ColorCake {
         self.sample_curve.set(sample_points.clone());
         let program = &self.shader_program.program;
 
-        context.use_program(Some(&program));
+        context.use_program(Some(program));
 
-        let position_location = context.get_attrib_location(&program, "a_position");
-        let color_location = context.get_attrib_location(&program, "a_color");
-        let hue_location = context.get_uniform_location(&program, "u_hue");
-        let space_location = context.get_uniform_location(&program, "u_space");
-        let matrix_location = context.get_uniform_location(&program, "u_matrix");
+        let position_location = context.get_attrib_location(program, "a_position");
+        let color_location = context.get_attrib_location(program, "a_color");
+        let hue_location = context.get_uniform_location(program, "u_hue");
+        let space_location = context.get_uniform_location(program, "u_space");
+        let matrix_location = context.get_uniform_location(program, "u_matrix");
 
         let buffer = context
             .create_buffer()
@@ -90,7 +74,7 @@ impl ColorCake {
 
         unsafe {
             let data_view = js_sys::Float32Array::view_mut_raw(
-                (&mut vertices).as_mut_ptr() as *mut f32,
+                vertices.as_mut_ptr() as *mut f32,
                 vertices.len() * 6,
             );
 
@@ -139,13 +123,13 @@ impl ColorCake {
         let mut matrix = scale * view_matrix;
 
         if cake_type == CakeType::Brick {
-            matrix = matrix * Mat4::from_rotation_y(45.);
+            matrix *= Mat4::from_rotation_y(45.);
         }
 
-        WebGl2RenderingContext::uniform1f(&context, hue_location.as_ref(), hue);
-        WebGl2RenderingContext::uniform1i(&context, space_location.as_ref(), color_space);
+        WebGl2RenderingContext::uniform1f(context, hue_location.as_ref(), hue);
+        WebGl2RenderingContext::uniform1i(context, space_location.as_ref(), color_space);
         WebGl2RenderingContext::uniform_matrix4fv_with_f32_array(
-            &context,
+            context,
             matrix_location.as_ref(),
             false,
             matrix.as_ref(),

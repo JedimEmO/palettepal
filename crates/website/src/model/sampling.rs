@@ -4,7 +4,6 @@ use glam::{Mat3, Vec2};
 use hsv::hsv_to_rgb;
 use js_sys::Math::sqrt;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 pub fn get_equidistant_points_in_range(start: f32, end: f32, count: usize) -> Vec<f32> {
     let mut points = vec![];
@@ -39,10 +38,10 @@ pub struct SamplingRect {
 impl Default for SamplingRect {
     fn default() -> Self {
         Self {
-            x: Mutable::new(0.13),
-            y: Mutable::new(0.13),
-            width: Mutable::new(0.75),
-            height: Mutable::new(0.75),
+            x: Mutable::new(0.),
+            y: Mutable::new(0.),
+            width: Mutable::new(1.),
+            height: Mutable::new(1.),
             rotation: Mutable::new(0.),
         }
     }

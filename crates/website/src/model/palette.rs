@@ -64,9 +64,7 @@ impl Palette {
 
         colors.replace_cloned(
             colors
-                .iter()
-                .cloned()
-                .filter(|v| (v.hue.get() - hue).abs() >= 2.)
+                .iter().filter(|&v| (v.hue.get() - hue).abs() >= 2.).cloned()
                 .collect::<Vec<_>>(),
         );
     }

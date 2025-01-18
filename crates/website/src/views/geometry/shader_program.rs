@@ -8,14 +8,9 @@ pub struct ColorSpaceVertex {
     pub hsx: [f32; 3],
 }
 
-pub enum GeometryIndex {
-    Triangles { start_index: usize, count: usize },
-}
-
 pub struct ShaderProgram {
     pub program: WebGlProgram,
-    pub vertices: Vec<ColorSpaceVertex>,
-    pub geometries: Vec<GeometryIndex>,
+    pub vertices: Vec<ColorSpaceVertex>
 }
 
 impl ShaderProgram {
@@ -24,25 +19,23 @@ impl ShaderProgram {
         vertex_shader: &str,
         fragment_shader: &str,
         vertices: Vec<ColorSpaceVertex>,
-        geometries: Vec<GeometryIndex>,
     ) -> anyhow::Result<Self> {
         let vert = compile_shader(
-            &context,
+            context,
             WebGl2RenderingContext::VERTEX_SHADER,
             vertex_shader,
         )?;
 
         let frag = compile_shader(
-            &context,
+            context,
             WebGl2RenderingContext::FRAGMENT_SHADER,
             fragment_shader,
         )?;
-        let program = link_program(&context, &vert, &frag)?;
+        let program = link_program(context, &vert, &frag)?;
 
         Ok(Self {
             program,
             vertices,
-            geometries,
         })
     }
 }

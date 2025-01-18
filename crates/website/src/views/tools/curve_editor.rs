@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use crate::mixins::observe_size::observe_size_mixin;
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
@@ -7,12 +6,12 @@ use crate::views::main_view::PalettePalViewModel;
 use dominator::events::MouseButton;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
-use futures_signals::signal::{option, Mutable, ReadOnlyMutable, Signal, SignalExt};
+use dwui::prelude::*;
+use futures_signals::signal::{Mutable, ReadOnlyMutable, Signal, SignalExt};
 use futures_signals::signal_map::SignalMapExt;
 use futures_signals::signal_vec::SignalVecExt;
 use glam::Vec2;
 use uuid::Uuid;
-use dwui::prelude::*;
 
 pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
@@ -60,7 +59,10 @@ pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
     })
 }
 
-fn curve_editor(palette: Palette, current_curve_id: ReadOnlyMutable<Uuid>) -> impl Signal<Item=Option<Dom>> + 'static {
+fn curve_editor(
+    palette: Palette,
+    current_curve_id: ReadOnlyMutable<Uuid>,
+) -> impl Signal<Item = Option<Dom>> + 'static {
     let curve_signal = current_curve_id
         .signal()
         .map(clone!(palette => move |id| {
@@ -68,16 +70,16 @@ fn curve_editor(palette: Palette, current_curve_id: ReadOnlyMutable<Uuid>) -> im
         }))
         .flatten();
 
-    curve_signal.map(clone!(palette => move |curve| {
+    curve_signal.map(move |curve| {
         let Some(curve) = curve else {
             return None;
         };
 
-        Some(curve_editor_inner(curve, palette.clone(), true))
-    }))
+        Some(curve_editor_inner(curve, true))
+    })
 }
 
-pub fn curve_editor_inner(curve: SamplingCurve, palette: Palette, meta_info: bool) -> Dom {
+pub fn curve_editor_inner(curve: SamplingCurve, meta_info: bool) -> Dom {
     let rect_sample_space_curve = curve.curve.signal_cloned();
 
     let rect_size = Mutable::new((0., 0.));
@@ -109,17 +111,16 @@ pub fn curve_editor_inner(curve: SamplingCurve, palette: Palette, meta_info: boo
                 .attr("viewBox", "0 0 512, 512")
                 .attr("width", "100%")
                 .attr("height", "100%")
-                .event(clone!(curve, palette, rect_size => move |event: events::DoubleClick| {
+                .event(clone!(curve, rect_size => move |event: events::DoubleClick| {
                     let x = event.offset_x();
                     let y = event.offset_y();
 
                     let x = x as f32 / rect_size.get().0 as f32;
                     let y = 1. - y as f32 / rect_size.get().1 as f32;
-                    let curves = palette.sampling_curves.lock_mut();
 
                     curve.add_new_point(Vec2::new(x, y));
                 }))
-                .event(clone!(curve, dragging_idx, palette, rect_size => move |event: events::MouseMove| {
+                .event(clone!(curve, dragging_idx, rect_size => move |event: events::MouseMove| {
                     let x = event.offset_x();
                     let y = event.offset_y();
                     let x = x as f32 / rect_size.get().0 as f32;
@@ -143,13 +144,13 @@ pub fn curve_editor_inner(curve: SamplingCurve, palette: Palette, meta_info: boo
                     dragging_idx.set(Some(idx));
                 }))
                 .children_signal_vec(rect_sample_space_curve.map(clone!(curve => move |curve_data| {
-                    curve_data.into_iter().enumerate().map(clone!(curve, dragging_idx, palette => move |(idx, point)| {
+                    curve_data.into_iter().enumerate().map(clone!(curve, dragging_idx => move |(idx, point)| {
                         svg!("circle", {
                             .dwclass!("cursor-pointer")
                             .attr("r", "10px")
                             .attr("cx", &(point.x * 512.).to_string())
                             .attr("cy", &(512. - point.y * 512.).to_string())
-                            .event(clone!(curve, dragging_idx, palette => move |event: events::MouseDown| {
+                            .event(clone!(curve, dragging_idx => move |event: events::MouseDown| {
                                 if event.button() == MouseButton::Left {
                                     dragging_idx.set(Some(idx));
                                 } else if event.button() == MouseButton::Right {

@@ -12,7 +12,7 @@ pub enum Icons {
 pub fn svg_button(
     icon: Icons,
     help: &str,
-    mut on_click: impl FnMut(events::Click) -> () + 'static,
+    mut on_click: impl FnMut(events::Click) + 'static,
     apply: impl FnOnce(DomBuilder<SvgElement>) -> DomBuilder<SvgElement>,
 ) -> Dom {
     let apply = move |b: DomBuilder<SvgElement>| {

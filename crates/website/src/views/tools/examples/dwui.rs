@@ -1,15 +1,16 @@
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
+use crate::views::tools::examples::color_inputs::color_input;
 use dominator::text;
 use dominator::Dom;
 use dominator::DomBuilder;
 use dwind::prelude::*;
 use dwui::prelude::*;
 use futures_signals::map_ref;
+use futures_signals::signal::not;
 use futures_signals::signal::Mutable;
 use futures_signals::signal::SignalExt;
-use futures_signals::signal::{always, not, Signal};
 use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
 use std::rc::Rc;
@@ -21,42 +22,6 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
 
     let palette = Rc::new(palette);
 
-    struct ColorAdapter {
-        palette: Rc<Palette>,
-        color: Mutable<Option<PaletteColor>>,
-    }
-
-    impl InputValueWrapper for ColorAdapter {
-        fn set(&self, value: String) -> ValidationResult {
-            let Some(color) = self
-                .palette
-                .colors
-                .lock_ref()
-                .iter()
-                .find(|v| v.name.get_cloned() == value)
-                .cloned()
-            else {
-                return ValidationResult::Invalid {
-                    message: "invalid color".to_string(),
-                };
-            };
-
-            self.color.set(Some(color.clone()));
-
-            ValidationResult::Valid
-        }
-
-        fn value_signal_cloned(&self) -> impl Signal<Item = String> + 'static {
-            self.color
-                .signal_cloned()
-                .map(|v| {
-                    v.map(|v| v.name.signal_cloned().boxed())
-                        .unwrap_or(always("".to_string()).boxed())
-                })
-                .flatten()
-        }
-    }
-
     let tailwind_colors = palette
         .colors
         .signal_vec_cloned()
@@ -66,10 +31,10 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
         .broadcast();
 
     let colors_lock = palette.colors.lock_ref();
-    let primary = Mutable::new(colors_lock.get(0).cloned());
-    let text_on_primary = Mutable::new(colors_lock.get(0).cloned());
-    let void = Mutable::new(colors_lock.get(0).cloned());
-    let error = Mutable::new(colors_lock.get(0).cloned());
+    let primary = Mutable::new(colors_lock.first().cloned());
+    let text_on_primary = Mutable::new(colors_lock.first().cloned());
+    let void = Mutable::new(colors_lock.first().cloned());
+    let error = Mutable::new(colors_lock.first().cloned());
 
     let colors_signal = map_ref! {
         let primary = primary.signal_cloned(),
@@ -94,7 +59,7 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
                 let colors = color.colors_u8_signal(&sampling_curves).broadcast();
 
                 b
-                .style_signal(format!("--dwui-{color_name}-50"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(0).map(|c| c.0).unwrap_or(0), c.get(0).map(|c| c.1).unwrap_or(0), c.get(0).map(|c| c.2).unwrap_or(0)).display_rgba())))
+                .style_signal(format!("--dwui-{color_name}-50"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.first().map(|c| c.0).unwrap_or(0), c.first().map(|c| c.1).unwrap_or(0), c.first().map(|c| c.2).unwrap_or(0)).display_rgba())))
                 .style_signal(format!("--dwui-{color_name}-100"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(1).map(|c| c.0).unwrap_or(0), c.get(1).map(|c| c.1).unwrap_or(0), c.get(1).map(|c| c.2).unwrap_or(0)).display_rgba())))
                 .style_signal(format!("--dwui-{color_name}-200"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(2).map(|c| c.0).unwrap_or(0), c.get(2).map(|c| c.1).unwrap_or(0), c.get(2).map(|c| c.2).unwrap_or(0)).display_rgba())))
                 .style_signal(format!("--dwui-{color_name}-300"), colors.signal_ref(|c| format!("{}", hex_color::HexColor::rgb(c.get(3).map(|c| c.0).unwrap_or(0), c.get(3).map(|c| c.1).unwrap_or(0), c.get(3).map(|c| c.2).unwrap_or(0)).display_rgba())))
@@ -119,7 +84,7 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
             html!("div", {
                 .dwclass!("flex flex-col gap-2 p-4")
                 .child(html!("div", {
-                    .dwclass!("flex @<sm:flex-col @sm:flex-row gap-2")
+                    .dwclass!("flex flex-row flex-wrap gap-2")
                     .dwclass!("[& > :not(:nth-child(1))]:w-40")
                     .children([
                         button!({
@@ -131,26 +96,10 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
                                 light_mode.set(!light_mode.get());
                             }))
                         }),
-                        select!({
-                            .label("Primary".to_string())
-                            .value(ColorAdapter {palette: palette.clone(), color: primary })
-                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
-                        }),
-                        select!({
-                            .label("Void".to_string())
-                            .value(ColorAdapter {palette: palette.clone(), color: void })
-                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
-                        }),
-                        select!({
-                            .label("Text on Primary".to_string())
-                            .value(ColorAdapter {palette: palette.clone(), color: text_on_primary })
-                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
-                        }),
-                        select!({
-                            .label("Error".to_string())
-                            .value(ColorAdapter {palette: palette.clone(), color: error })
-                            .options_signal_vec(tailwind_colors.signal_cloned().to_signal_vec())
-                        })
+                        color_input("Primary", &palette, primary, tailwind_colors.signal_cloned().to_signal_vec()),
+                        color_input("Text on Primary", &palette, text_on_primary, tailwind_colors.signal_cloned().to_signal_vec()),
+                        color_input("Void", &palette, void, tailwind_colors.signal_cloned().to_signal_vec()),
+                        color_input("Error", &palette, error, tailwind_colors.signal_cloned().to_signal_vec())
                     ])
                 }))
             })
@@ -183,7 +132,7 @@ fn example_ui(light: &Mutable<bool>) -> Dom {
     html!("div", {
         .class_signal("light", light.signal())
         .class_signal("dark", not(light.signal()))
-        .dwclass!("flex @sm:flex-col @<sm:flex-row p-8 justify-center gap-8 flex-1")
+        .dwclass!("flex @sm:flex-col @<sm:flex-row p-2 justify-center gap-8 flex-1")
         .class_signal(&*SCHEME_CLASS_LIGHT, light.signal())
         .class_signal(&*SCHEME_CLASS, not(light.signal()))
         .children([

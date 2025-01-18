@@ -8,6 +8,7 @@ license = "MIT"
 crate-type = ["cdylib"]
 
 [dependencies]
+color = { path = "../domain/color" }
 
 anyhow.workspace = true
 dominator.workspace = true

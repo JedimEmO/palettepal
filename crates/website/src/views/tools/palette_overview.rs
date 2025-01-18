@@ -14,7 +14,7 @@ pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
     html!("div", {
         .apply(panel_mixin)
-        .dwclass!("p-4 flex-col flex justify-center align-items-center gap-4")
+        .dwclass!("p-4 @md:flex-col @<md:flex-row flex justify-center align-items-center gap-4 @md:w-64 @<md:w-full")
         .child(preview_palette(palette.get_cloned()))
         .child(color_circle_preview(palette.get_cloned()))
     })
@@ -102,7 +102,7 @@ fn color_circle_preview(palette: Palette) -> Dom {
                 let mut angle = 0.;
                 let num_sectors = 64;
 
-                for i in 0..num_sectors {
+                for _ in 0..num_sectors {
                     let hsv = hsv::hsv_to_rgb(angle, 1., 1.);
                     let next_angle = angle + 360. / num_sectors as f64;
                     ctx.set_fill_style_str(&format!("rgb({}, {}, {})", hsv.0, hsv.1, hsv.2));
@@ -144,6 +144,8 @@ fn color_circle_preview(palette: Palette) -> Dom {
                 on_move(ox, oy, false);
             }))
             .children_signal_vec(colors.map(clone!(dragging_hue, palette => move |color| {
+                let hue = color.hue.clone();
+
                 svg!("circle", {
                     .dwclass!("cursor-pointer")
                     .attr("r", "20px")
@@ -154,16 +156,16 @@ fn color_circle_preview(palette: Palette) -> Dom {
                         event.stop_propagation();
                         palette.remove_hue(color.hue.get())
                     }))
-                    .event(clone!(dragging_hue, color => move |_: events::MouseDown| {
-                        dragging_hue.set(Some(color.hue.clone()));
+                    .event(clone!(dragging_hue, hue => move |_: events::MouseDown| {
+                        dragging_hue.set(Some(hue.clone()));
                     }))
-                    .event(clone!(dragging_hue, color => move |_: events::TouchStart| {
-                        dragging_hue.set(Some(color.hue.clone()));
+                    .event(clone!(dragging_hue, hue => move |_: events::TouchStart| {
+                        dragging_hue.set(Some(hue.clone()));
                     }))
-                    .global_event(clone!(dragging_hue, color => move |_: events::MouseUp| {
+                    .global_event(clone!(dragging_hue => move |_: events::MouseUp| {
                         dragging_hue.set(None);
                     }))
-                    .global_event(clone!(dragging_hue, color => move |_: events::TouchEnd| {
+                    .global_event(clone!(dragging_hue => move |_: events::TouchEnd| {
                         dragging_hue.set(None);
                     }))
                 })
