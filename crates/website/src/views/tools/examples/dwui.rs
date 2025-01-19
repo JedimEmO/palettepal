@@ -1,22 +1,24 @@
-use crate::mixins::panel::panel_mixin;
+use crate::mixins::panel::widget_panel_mixin;
 use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
+use crate::views::main_view::PalettePalViewModel;
 use crate::views::tools::examples::color_inputs::color_input;
+use crate::views::tools::Tool;
 use dominator::text;
 use dominator::Dom;
 use dominator::DomBuilder;
 use dwind::prelude::*;
 use dwui::prelude::*;
 use futures_signals::map_ref;
-use futures_signals::signal::not;
 use futures_signals::signal::Mutable;
 use futures_signals::signal::SignalExt;
+use futures_signals::signal::{always, not};
 use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
 use std::rc::Rc;
 use web_sys::HtmlElement;
 
-pub fn dwui_example_container(palette: Palette) -> Dom {
+pub fn dwui_example_container(vm: &PalettePalViewModel, palette: Palette) -> Dom {
     let curves = palette.sampling_curves.clone();
     let sampling_curves = palette.sampling_curves.clone();
 
@@ -77,8 +79,8 @@ pub fn dwui_example_container(palette: Palette) -> Dom {
     let light_mode = Mutable::new(false);
 
     html!("div", {
-        .dwclass!("flex-1")
-        .apply(panel_mixin)
+        .dwclass!("flex-1 p-2")
+        .apply(widget_panel_mixin(always("DWUI Preview".to_string()), Some(vm.tools_view_state.create_close_tool_handler(Tool::DwuiExample))))
         .children([
             // All colors, with type association
             html!("div", {

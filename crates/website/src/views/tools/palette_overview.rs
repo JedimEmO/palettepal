@@ -1,22 +1,27 @@
-use crate::mixins::panel::panel_mixin;
+use crate::mixins::panel::widget_panel_mixin;
 use crate::model::palette::Palette;
 use crate::views::main_view::PalettePalViewModel;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
-use futures_signals::signal::{Mutable, SignalExt};
+use futures_signals::signal::{always, Mutable, SignalExt};
 use futures_signals::signal_vec::SignalVecExt;
 use std::rc::Rc;
 use std::time::Duration;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use crate::views::tools::Tool;
 
 pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
+
     html!("div", {
-        .apply(panel_mixin)
-        .dwclass!("p-4 @md:flex-col @<md:flex-row flex justify-center align-items-center gap-4 @md:w-64 @<md:w-full")
-        .child(preview_palette(palette.get_cloned()))
-        .child(color_circle_preview(palette.get_cloned()))
+        .dwclass!("p-2")
+        .apply(widget_panel_mixin(always("Color Wheel".to_string()), Some(vm.tools_view_state.create_close_tool_handler(Tool::PaletteOverview))))
+        .child(html!("div", {
+            .dwclass!("p-4 @md:flex-col @<md:flex-row flex justify-center align-items-center gap-4 @md:w-64 @<md:w-full")
+            .child(preview_palette(palette.get_cloned()))
+            .child(color_circle_preview(palette.get_cloned()))
+        }))
     })
 }
 

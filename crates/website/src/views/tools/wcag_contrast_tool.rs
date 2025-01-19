@@ -1,4 +1,4 @@
-use crate::mixins::panel::panel_mixin;
+use crate::mixins::panel::{widget_panel_mixin};
 use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
 use crate::views::tools::examples::color_inputs::color_input;
@@ -9,8 +9,10 @@ use futures_signals::map_ref;
 use futures_signals::signal::{always, Mutable, Signal, SignalExt};
 use futures_signals::signal_vec::{SignalVec, SignalVecExt};
 use std::rc::Rc;
+use crate::views::main_view::PalettePalViewModel;
+use crate::views::tools::Tool;
 
-pub fn wcag_tool(palette: &Palette) -> Dom {
+pub fn wcag_tool(vm: &PalettePalViewModel, palette: &Palette) -> Dom {
     let color_a = Mutable::new(palette.colors.lock_ref().get(0).cloned());
     let color_b = Mutable::new(palette.colors.lock_ref().get(0).cloned());
 
@@ -42,56 +44,65 @@ pub fn wcag_tool(palette: &Palette) -> Dom {
 
     let palette = Rc::new(palette.clone());
 
-    html!("div", {
-        .dwclass!("flex-1 min-w-64 p-4 flex flex-col gap-4 h-sm overflow-y-scroll")
-        .apply(panel_mixin)
+    let body = html!("div", {
+        .dwclass!("flex-1 flex flex-col gap-4 p-4")
         .child(html!("div", {
-            .dwclass!("flex flex-row justify-center gap-4")
+            .dwclass!("flex flex-row flex-1")
             .children([
                 color_input("Color A", &palette, color_a.clone(), color_names_signal_vec.signal_cloned().to_signal_vec()),
                 color_input("Color B", &palette, color_b.clone(), color_names_signal_vec.signal_cloned().to_signal_vec()),
             ])
         }))
-        .child(html!("table", {
-            .dwclass!("divide-y border-woodsmoke-500 border-collapse")
-            .children([
-                html!("tr", {
-                    .dwclass!("border-woodsmoke-500")
-                    .children([
-                        html!("th", {
-                            .text("Fit")
-                        }),
-                        html!("th", {
-                            .text("Color pairs")
-                        })
-                    ])
-                }),
-                html!("tr", {
-                    .dwclass!("border-woodsmoke-500")
-                    .children([
-                        html!("td", {
-                            .text("Text, enhanced")
-                        }),
-                        html!("td", {
-                            .dwclass!("flex flex-wrap flex-row gap-2")
-                            .children_signal_vec(contrasts_display(text_enhanced_contrast_signal))
-                        })
-                    ])
-                }),
-                html!("tr", {
-                    .dwclass!("border-woodsmoke-500")
-                    .children([
-                        html!("td", {
-                            .text("Text, minimum")
-                        }),
-                        html!("td", {
-                            .dwclass!("flex flex-wrap flex-row gap-2")
-                            .children_signal_vec(contrasts_display(text_minimum_contrasts_signal))
-                        })
-                    ])
-                })
-            ])
+        .child(html!("div", {
+            .dwclass!("overflow-y-scroll flex h-80")
+            .child(html!("table", {
+                .dwclass!("divide-y border-woodsmoke-500 border-collapse")
+                .children([
+                    html!("tr", {
+                        .dwclass!("border-woodsmoke-500")
+                        .children([
+                            html!("th", {
+                                .text("Fit")
+                            }),
+                            html!("th", {
+                                .text("Color pairs")
+                            })
+                        ])
+                    }),
+                    html!("tr", {
+                        .dwclass!("border-woodsmoke-500")
+                        .children([
+                            html!("td", {
+                                .text("Text, enhanced")
+                            }),
+                            html!("td", {
+                                .dwclass!("flex flex-wrap flex-row gap-2")
+                                .children_signal_vec(contrasts_display(text_enhanced_contrast_signal))
+                            })
+                        ])
+                    }),
+                    html!("tr", {
+                        .dwclass!("border-woodsmoke-500")
+                        .children([
+                            html!("td", {
+                                .text("Text, minimum")
+                            }),
+                            html!("td", {
+                                .dwclass!("flex flex-wrap flex-row gap-2")
+                                .children_signal_vec(contrasts_display(text_minimum_contrasts_signal))
+                            })
+                        ])
+                    })
+                ])
+            }))
         }))
+    });
+
+    let close_cb = vm.tools_view_state.create_close_tool_handler(Tool::WcagContrast);
+    html!("div", {
+        .dwclass!("flex-1 p-2 relative")
+        .apply(widget_panel_mixin(always("WCAG Text Contrast Analysis".to_string()), Some(close_cb)))
+        .child(body)
     })
 }
 

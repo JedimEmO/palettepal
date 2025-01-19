@@ -1,5 +1,5 @@
 use crate::mixins::observe_size::observe_size_mixin;
-use crate::mixins::panel::panel_mixin;
+use crate::mixins::panel::{panel_mixin, widget_panel_mixin};
 use crate::model::palette::Palette;
 use crate::model::sampling_curve::{Modifiers, SamplingCurve};
 use crate::views::main_view::PalettePalViewModel;
@@ -7,13 +7,14 @@ use dominator::events::MouseButton;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
 use dwui::prelude::*;
-use futures_signals::signal::{Mutable, ReadOnlyMutable, Signal, SignalExt};
+use futures_signals::signal::{always, Mutable, ReadOnlyMutable, Signal, SignalExt};
 use futures_signals::signal_map::SignalMapExt;
 use futures_signals::signal_vec::SignalVecExt;
 use glam::Vec2;
 use uuid::Uuid;
+use crate::views::tools::Tool;
 
-pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
+pub fn sampling_curve_editor(vm: &PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;
     let palette = palette.get_cloned();
 
@@ -27,8 +28,7 @@ pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
         .to_signal_cloned()
         .to_signal_vec();
 
-    html!("div", {
-        .apply(panel_mixin)
+    let body = html!("div", {
         .dwclass!("flex flex-row divide-x p-4")
         // Curve selector
         .child(html!("div", {
@@ -56,6 +56,12 @@ pub fn sampling_curve_editor(vm: PalettePalViewModel) -> Dom {
         }))
         // Curve editor
         .child_signal(curve_editor(palette, selected_curve.read_only()))
+    });
+
+    html!("div", {
+        .dwclass!("p-2")
+        .apply(widget_panel_mixin(always("Curve Editor".to_string()), Some(vm.tools_view_state.create_close_tool_handler(Tool::CurveEditor))))
+        .child(body)
     })
 }
 

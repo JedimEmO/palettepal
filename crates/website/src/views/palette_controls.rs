@@ -13,8 +13,9 @@ use std::iter::once;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{window, HtmlAnchorElement, HtmlInputElement, Url};
+use crate::views::tools::Tool;
 
-pub fn palette_controls(vm: PalettePalViewModel) -> Dom {
+pub fn palette_controls(vm: &PalettePalViewModel) -> Dom {
     html!("div", {
         .dwclass!("flex flex-col gap-2 pointer-events-auto align-items-center")
         .children([
@@ -22,45 +23,41 @@ pub fn palette_controls(vm: PalettePalViewModel) -> Dom {
                 .dwclass!("@>sm:w-full @<sm:w-sm flex @sm:flex-row @<sm:flex-col")
                 .dwclass!("flex @sm:flex-row @<sm:flex-col gap-4")
                 .children([
-                    project_menu(vm.clone()),
+                    tools_menu(vm.clone()),
                     export_menu(vm.clone()),
-                    save_menu(vm.palette)
+                    save_menu(vm.palette.clone())
                 ])
             })
         ])
     })
 }
 
-fn project_menu(vm: PalettePalViewModel) -> Dom {
-    let PalettePalViewModel {
-        palette,
-        show_sampling_curve_editor,
-        ..
-    } = vm;
-
+fn tools_menu(vm: PalettePalViewModel) -> Dom {
     application_menu(
-        "Project",
-        clone!(palette => move || {
+        "Tools",
+        move || {
             html!("div", {
+                .dwclass!("flex flex-col gap-2")
                 .children([
-                    html!("div", {
-                        .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
-                        .text("Add Color")
-                        .event(clone!(palette => move |_: events::Click| {
-                            palette.lock_mut().add_new_color();
-                        }))
-                    }),
-                    html!("div", {
-                        .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
-                        .text("Edit sampling curves")
-                        .event(clone!(show_sampling_curve_editor => move |_: events::Click| {
-                            show_sampling_curve_editor.set(!show_sampling_curve_editor.get());
-                        }))
-                    })
+                    tool_menu_entry(&vm, Tool::PaletteOverview),
+                    tool_menu_entry(&vm, Tool::CurveEditor),
+                    tool_menu_entry(&vm, Tool::WcagContrast),
+                    tool_menu_entry(&vm, Tool::DwuiExample),
                 ])
             })
-        }),
+        }
     )
+}
+
+fn tool_menu_entry(vm:&PalettePalViewModel, tool: Tool) -> Dom {
+    html!("div", {
+        .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
+        .dwclass_signal!("text-picton-blue-400", vm.tools_view_state.tool_state_signal(tool))
+        .text(&format!("{tool}"))
+        .event(clone!(vm => move |_: events::Click| {
+            vm.tools_view_state.toggle(tool)
+        }))
+    })
 }
 
 fn application_menu(label: &str, mut content_factory: impl FnMut() -> Dom + 'static) -> Dom {
