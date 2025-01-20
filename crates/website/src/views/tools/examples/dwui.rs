@@ -18,7 +18,7 @@ use once_cell::sync::Lazy;
 use std::rc::Rc;
 use web_sys::HtmlElement;
 
-pub fn dwui_example_container(vm: &PalettePalViewModel, palette: Palette) -> Dom {
+pub fn dwui_example_container(_vm: &PalettePalViewModel, palette: Palette) -> Dom {
     let curves = palette.sampling_curves.clone();
     let sampling_curves = palette.sampling_curves.clone();
 
@@ -80,7 +80,7 @@ pub fn dwui_example_container(vm: &PalettePalViewModel, palette: Palette) -> Dom
 
     html!("div", {
         .dwclass!("flex-1 p-2")
-        .apply(widget_panel_mixin(always("DWUI Preview".to_string()), Some(vm.tools_view_state.create_close_tool_handler(Tool::DwuiExample))))
+        .apply(widget_panel_mixin(always("DWUI Preview".to_string()), Some(palette.tools_view_state.create_close_tool_handler(Tool::DwuiExample))))
         .children([
             // All colors, with type association
             html!("div", {

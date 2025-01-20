@@ -4,6 +4,7 @@ use futures_signals::signal_map::MutableBTreeMap;
 use futures_signals::signal_vec::MutableVec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::views::tools::ToolsViewState;
 
 pub const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
@@ -11,6 +12,8 @@ pub const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 
 pub struct Palette {
     pub colors: MutableVec<PaletteColor>,
     pub sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
+    #[serde(default)]
+    pub tools_view_state: ToolsViewState
 }
 
 impl Palette {
@@ -33,6 +36,7 @@ impl Palette {
         Self {
             colors,
             sampling_curves,
+            tools_view_state: Default::default(),
         }
     }
 

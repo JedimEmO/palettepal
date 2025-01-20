@@ -16,7 +16,7 @@ pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
 
     html!("div", {
         .dwclass!("p-2")
-        .apply(widget_panel_mixin(always("Color Wheel".to_string()), Some(vm.tools_view_state.create_close_tool_handler(Tool::PaletteOverview))))
+        .apply(widget_panel_mixin(always("Color Wheel".to_string()), Some(palette.get_cloned().tools_view_state.create_close_tool_handler(Tool::PaletteOverview))))
         .child(html!("div", {
             .dwclass!("p-4 @md:flex-col @<md:flex-row flex justify-center align-items-center gap-4 @md:w-64 @<md:w-full")
             .child(preview_palette(palette.get_cloned()))

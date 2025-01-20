@@ -12,7 +12,7 @@ use std::rc::Rc;
 use crate::views::main_view::PalettePalViewModel;
 use crate::views::tools::Tool;
 
-pub fn wcag_tool(vm: &PalettePalViewModel, palette: &Palette) -> Dom {
+pub fn wcag_tool(_vm: &PalettePalViewModel, palette: &Palette) -> Dom {
     let color_a = Mutable::new(palette.colors.lock_ref().get(0).cloned());
     let color_b = Mutable::new(palette.colors.lock_ref().get(0).cloned());
 
@@ -98,7 +98,7 @@ pub fn wcag_tool(vm: &PalettePalViewModel, palette: &Palette) -> Dom {
         }))
     });
 
-    let close_cb = vm.tools_view_state.create_close_tool_handler(Tool::WcagContrast);
+    let close_cb = palette.tools_view_state.create_close_tool_handler(Tool::WcagContrast);
     html!("div", {
         .dwclass!("flex-1 p-2 relative")
         .apply(widget_panel_mixin(always("WCAG Text Contrast Analysis".to_string()), Some(close_cb)))

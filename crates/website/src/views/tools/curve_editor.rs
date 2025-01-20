@@ -55,12 +55,12 @@ pub fn sampling_curve_editor(vm: &PalettePalViewModel) -> Dom {
             }))
         }))
         // Curve editor
-        .child_signal(curve_editor(palette, selected_curve.read_only()))
+        .child_signal(curve_editor(palette.clone(), selected_curve.read_only()))
     });
 
     html!("div", {
         .dwclass!("p-2")
-        .apply(widget_panel_mixin(always("Curve Editor".to_string()), Some(vm.tools_view_state.create_close_tool_handler(Tool::CurveEditor))))
+        .apply(widget_panel_mixin(always("Curve Editor".to_string()), Some(palette.tools_view_state.create_close_tool_handler(Tool::CurveEditor))))
         .child(body)
     })
 }

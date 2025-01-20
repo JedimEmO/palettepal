@@ -52,10 +52,10 @@ fn tools_menu(vm: PalettePalViewModel) -> Dom {
 fn tool_menu_entry(vm:&PalettePalViewModel, tool: Tool) -> Dom {
     html!("div", {
         .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
-        .dwclass_signal!("text-picton-blue-400", vm.tools_view_state.tool_state_signal(tool))
+        .dwclass_signal!("text-picton-blue-400", vm.palette.get_cloned().tools_view_state.tool_state_signal(tool))
         .text(&format!("{tool}"))
         .event(clone!(vm => move |_: events::Click| {
-            vm.tools_view_state.toggle(tool)
+            vm.palette.get_cloned().tools_view_state.toggle(tool)
         }))
     })
 }

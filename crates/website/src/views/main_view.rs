@@ -2,7 +2,6 @@ use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
 use crate::views::color_panel::color_panel;
 use crate::views::palette_controls::palette_controls;
-use crate::views::tools::ToolsViewState;
 use crate::widgets::menu_overlay::menu_overlay;
 use dominator::Dom;
 use dwind::prelude::*;
@@ -17,7 +16,6 @@ pub struct PalettePalViewModel {
     pub palette: Mutable<Palette>,
     pub export_file_content: Mutable<Option<String>>,
     pub export_image_content: Mutable<Option<Vec<Vec<(u8, u8, u8)>>>>,
-    pub tools_view_state: ToolsViewState,
 }
 
 pub fn main_view() -> Dom {
@@ -30,7 +28,6 @@ pub fn main_view() -> Dom {
         palette,
         export_file_content,
         export_image_content,
-        tools_view_state: Default::default(),
     };
 
     let inner = menu_overlay(
@@ -65,7 +62,7 @@ pub fn palette_view(vm: PalettePalViewModel) -> Dom {
                 // Renders the palette as a PNG export
                 // 1 row per color
                 .child_signal(export_png_view(&vm))
-                .children_signal_vec(vm.tools_view_state.tools_children_signal(vm.clone()))
+                .children_signal_vec(vm.palette.get_cloned().tools_view_state.tools_children_signal(vm.clone()))
                 .child(html!("div", {
                     .dwclass!("flex flex-wrap flex-row w-full")
                     .children_signal_vec(palette.colors.signal_vec_cloned().map(clone!(palette => move |color| {
