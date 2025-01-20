@@ -16,6 +16,7 @@ dwind.workspace = true
 dwind-build.workspace = true
 dwui.workspace = true
 dwind-macros.workspace = true
+futures = "0.3.31"
 futures-signals.workspace = true
 futures-signals-component-macro = { version = "0.3.0", features = ["dominator"] }
 glam.workspace = true

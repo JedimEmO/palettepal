@@ -1,19 +1,21 @@
-use std::fmt::{Display, Formatter};
 use crate::views::main_view::PalettePalViewModel;
+use crate::views::tools::curve_editor::sampling_curve_editor;
 use crate::views::tools::examples::dwui::dwui_example_container;
+use crate::views::tools::pixel_art_tool::pixel_art_tool;
 use crate::views::tools::wcag_contrast_tool::wcag_tool;
 use dominator::Dom;
-use futures_signals::signal::{always, Signal};
 use futures_signals::signal::SignalExt;
+use futures_signals::signal::{always, Signal};
 use futures_signals::signal_map::{MutableBTreeMap, SignalMapExt};
 use futures_signals::signal_vec::{SignalVec, SignalVecExt};
 use palette_overview::palette_overview;
 use serde::{Deserialize, Serialize};
-use crate::views::tools::curve_editor::sampling_curve_editor;
+use std::fmt::{Display, Formatter};
 
 pub mod curve_editor;
 pub mod examples;
 pub mod palette_overview;
+pub mod pixel_art_tool;
 pub mod wcag_contrast_tool;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
@@ -21,7 +23,8 @@ pub enum Tool {
     PaletteOverview,
     DwuiExample,
     WcagContrast,
-    CurveEditor
+    CurveEditor,
+    PixelArt,
 }
 
 impl Display for Tool {
@@ -31,6 +34,7 @@ impl Display for Tool {
             Tool::DwuiExample => write!(f, "DWUI Example"),
             Tool::WcagContrast => write!(f, "WCAG Contrast"),
             Tool::CurveEditor => write!(f, "Curve Editor"),
+            Tool::PixelArt => write!(f, "Pixel Art"),
         }
     }
 }
@@ -45,7 +49,7 @@ impl Default for ToolsViewState {
         let show_tools = MutableBTreeMap::new();
         show_tools.lock_mut().insert(Tool::PaletteOverview, true);
         show_tools.lock_mut().insert(Tool::DwuiExample, true);
-        show_tools.lock_mut().insert(Tool::WcagContrast, true);
+        show_tools.lock_mut().insert(Tool::PixelArt, true);
 
         Self { show_tools }
     }
@@ -58,8 +62,11 @@ impl ToolsViewState {
         show.insert(tool, !*v);
     }
 
-    pub fn tool_state_signal(&self, tool: Tool) -> impl Signal<Item=bool> {
-        self.show_tools.signal_map().key_cloned(tool).map(|v| v.unwrap_or(false))
+    pub fn tool_state_signal(&self, tool: Tool) -> impl Signal<Item = bool> {
+        self.show_tools
+            .signal_map()
+            .key_cloned(tool)
+            .map(|v| v.unwrap_or(false))
     }
 
     pub fn tools_children_signal(&self, vm: PalettePalViewModel) -> impl SignalVec<Item = Dom> {
@@ -80,9 +87,8 @@ impl ToolsViewState {
                     .signal_cloned()
                     .map(clone!(vm => move |palette| wcag_tool(&vm, &palette)))
                     .boxed_local(),
-                Tool::CurveEditor => {
-                    always(sampling_curve_editor(&vm)).boxed_local()
-                }
+                Tool::CurveEditor => always(sampling_curve_editor(&vm)).boxed_local(),
+                Tool::PixelArt => pixel_art_tool(&vm).boxed_local(),
             })
     }
 

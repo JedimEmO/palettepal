@@ -1,7 +1,9 @@
+use std::time::Duration;
+use futures_signals::signal::SignalExt;
 use crate::model::palette_color::PaletteColor;
 use crate::model::sampling_curve::SamplingCurve;
 use futures_signals::signal_map::MutableBTreeMap;
-use futures_signals::signal_vec::MutableVec;
+use futures_signals::signal_vec::{MutableVec, SignalVec, SignalVecExt};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::views::tools::ToolsViewState;
@@ -86,5 +88,13 @@ impl Palette {
         }
 
         palette.to_string()
+    }
+
+    pub fn palette_colors_signal(&self) -> impl SignalVec<Item=(u8, u8, u8)> {
+        let curves = self.sampling_curves.clone();
+
+        self.colors.signal_vec_cloned().map(clone!(curves => move |color| {
+            color.colors_u8_signal(&curves).throttle(|| gloo_timers::future::sleep(Duration::from_millis(500))).to_signal_vec()
+        })).flatten()
     }
 }
