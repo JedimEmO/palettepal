@@ -25,6 +25,7 @@ gloo-timers.workspace = true
 hex_color = "3.0.0"
 hsv = "0.1.1"
 hsl = "0.1.1"
+rgb_hsv = "1.0.1"
 jascpal = "0.1.1"
 js-sys.workspace = true
 once_cell = "1.20.2"

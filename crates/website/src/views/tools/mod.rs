@@ -11,12 +11,14 @@ use futures_signals::signal_vec::{SignalVec, SignalVecExt};
 use palette_overview::palette_overview;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use crate::views::tools::color_import::color_import_tool;
 
 pub mod curve_editor;
 pub mod examples;
 pub mod palette_overview;
 pub mod pixel_art_tool;
 pub mod wcag_contrast_tool;
+pub mod color_import;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub enum Tool {
@@ -25,6 +27,7 @@ pub enum Tool {
     WcagContrast,
     CurveEditor,
     PixelArt,
+    ColorImport,
 }
 
 impl Display for Tool {
@@ -35,6 +38,7 @@ impl Display for Tool {
             Tool::WcagContrast => write!(f, "WCAG Contrast"),
             Tool::CurveEditor => write!(f, "Curve Editor"),
             Tool::PixelArt => write!(f, "Pixel Art"),
+            Tool::ColorImport => write!(f, "Color Import")
         }
     }
 }
@@ -89,6 +93,7 @@ impl ToolsViewState {
                     .boxed_local(),
                 Tool::CurveEditor => always(sampling_curve_editor(&vm)).boxed_local(),
                 Tool::PixelArt => pixel_art_tool(&vm).boxed_local(),
+                Tool::ColorImport => always(color_import_tool(&vm)).boxed_local()
             })
     }
 

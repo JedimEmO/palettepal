@@ -1,11 +1,15 @@
 use std::time::Duration;
+use dwind_build::colors::Color;
 use futures_signals::signal::SignalExt;
-use crate::model::palette_color::PaletteColor;
+use crate::model::palette_color::{ColorSpace, PaletteColor};
 use crate::model::sampling_curve::SamplingCurve;
 use futures_signals::signal_map::MutableBTreeMap;
 use futures_signals::signal_vec::{MutableVec, SignalVec, SignalVecExt};
+use glam::Vec2;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use wasm_bindgen::UnwrapThrowExt;
+use crate::model::palette_color::ColorSpace::HSV;
 use crate::views::tools::ToolsViewState;
 
 pub const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
@@ -40,6 +44,35 @@ impl Palette {
             sampling_curves,
             tools_view_state: Default::default(),
         }
+    }
+
+    pub fn import_dwind_color(&self, color: Color) {
+        let curve_id = Uuid::new_v4();
+        let mut curve = SamplingCurve::new();
+        curve.curve.lock_mut().clear();
+
+        curve.name.set(format!("{}_curve", color.name));
+
+        let mut hue = 0.;
+
+        for (shade, color) in color.shades {
+            let hex = hex_color::HexColor::parse(&color).expect_throw("Failed to parse color {shade}");
+            let hsv = rgb_hsv::rgb_to_hsv((hex.r as f32 / 256., hex.g as f32 / 256., hex.b as f32 / 256.));
+            hue = hsv.0 * 360.;
+            curve.curve.lock_mut().push(Vec2::new(hsv.1, hsv.2))
+        }
+
+        curve.sort();
+
+        self.sampling_curves.lock_mut().insert_cloned(curve_id, curve);
+
+
+        let mut palette_color = PaletteColor::new(hue);
+        palette_color.name.set(color.name);
+        palette_color.sampling_curve_id.set(curve_id);
+        palette_color.color_space.set(ColorSpace::HSV);
+
+        self.colors.lock_mut().push_cloned(palette_color);
     }
 
     pub fn add_new_curve(&self) -> Uuid {

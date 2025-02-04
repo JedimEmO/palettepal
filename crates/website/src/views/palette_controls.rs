@@ -44,6 +44,7 @@ fn tools_menu(vm: PalettePalViewModel) -> Dom {
                     tool_menu_entry(&vm, Tool::WcagContrast),
                     tool_menu_entry(&vm, Tool::DwuiExample),
                     tool_menu_entry(&vm, Tool::PixelArt),
+                    tool_menu_entry(&vm, Tool::ColorImport),
                 ])
             })
         }

@@ -736,6 +736,7 @@ dependencies = [
  "js-sys",
  "log",
  "once_cell",
+ "rgb_hsv",
  "serde",
  "serde_json",
  "url",
@@ -891,6 +892,12 @@ checksum = "57397d16646700483b67d2dd6511d79318f9d057fdbd21a4066aeac8b41d310a"
 dependencies = [
  "bytemuck",
 ]
+
+[[package]]
+name = "rgb_hsv"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fec0123e8720dcbc31a22f3ecb7dc5cb41f4b73e361eca37d4acf0b04f572589"
 
 [[package]]
 name = "ryu"
