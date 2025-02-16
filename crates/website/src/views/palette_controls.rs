@@ -2,6 +2,7 @@ use crate::mixins::click_outside_collapse::click_outside_collapse_mixin;
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette::Palette;
 use crate::views::main_view::PalettePalViewModel;
+use crate::views::tools::Tool;
 use dominator::{events, Dom};
 use dwind::prelude::*;
 use dwui::prelude::*;
@@ -13,7 +14,6 @@ use std::iter::once;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{window, HtmlAnchorElement, HtmlInputElement, Url};
-use crate::views::tools::Tool;
 
 pub fn palette_controls(vm: &PalettePalViewModel) -> Dom {
     html!("div", {
@@ -33,25 +33,22 @@ pub fn palette_controls(vm: &PalettePalViewModel) -> Dom {
 }
 
 fn tools_menu(vm: PalettePalViewModel) -> Dom {
-    application_menu(
-        "Tools",
-        move || {
-            html!("div", {
-                .dwclass!("flex flex-col gap-2")
-                .children([
-                    tool_menu_entry(&vm, Tool::PaletteOverview),
-                    tool_menu_entry(&vm, Tool::CurveEditor),
-                    tool_menu_entry(&vm, Tool::WcagContrast),
-                    tool_menu_entry(&vm, Tool::DwuiExample),
-                    tool_menu_entry(&vm, Tool::PixelArt),
-                    tool_menu_entry(&vm, Tool::ColorImport),
-                ])
-            })
-        }
-    )
+    application_menu("Tools", move || {
+        html!("div", {
+            .dwclass!("flex flex-col gap-2")
+            .children([
+                tool_menu_entry(&vm, Tool::PaletteOverview),
+                tool_menu_entry(&vm, Tool::CurveEditor),
+                tool_menu_entry(&vm, Tool::WcagContrast),
+                tool_menu_entry(&vm, Tool::DwuiExample),
+                tool_menu_entry(&vm, Tool::PixelArt),
+                tool_menu_entry(&vm, Tool::ColorImport),
+            ])
+        })
+    })
 }
 
-fn tool_menu_entry(vm:&PalettePalViewModel, tool: Tool) -> Dom {
+fn tool_menu_entry(vm: &PalettePalViewModel, tool: Tool) -> Dom {
     html!("div", {
         .dwclass!("font-bold text-base text-woodsmoke-300 hover:text-picton-blue-500 cursor-pointer w-full h-full text-center")
         .dwclass_signal!("text-picton-blue-400", vm.palette.get_cloned().tools_view_state.tool_state_signal(tool))

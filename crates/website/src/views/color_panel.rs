@@ -1,27 +1,27 @@
 use crate::mixins::panel::panel_mixin;
 use crate::model::palette_color::PaletteColor;
+use crate::model::sampling::static_sample_signal;
 use crate::model::sampling_curve::SamplingCurve;
 use crate::views::geometry::color_cake;
 use crate::views::svg_icons::{svg_button, Icons};
+use crate::views::tools::curve_editor::curve_editor_inner;
 use dominator::Dom;
 use dwind::prelude::*;
 use dwui::prelude::*;
 use dwui::{select, slider};
 use futures_signals::map_ref;
-use futures_signals::signal::{option, Mutable, Signal, SignalExt};
+use futures_signals::signal::{option, LocalBoxSignal, Mutable, Signal, SignalExt};
 use futures_signals::signal_map::{MutableBTreeMap, SignalMapExt};
 use futures_signals::signal_vec::SignalVecExt;
 use once_cell::sync::Lazy;
 use std::f32::consts::PI;
 use uuid::Uuid;
-use crate::model::sampling::static_sample_signal;
-use crate::views::tools::curve_editor::curve_editor_inner;
 
 static COPIED_COLOR: Lazy<Mutable<Option<PaletteColor>>> = Lazy::new(|| Mutable::new(None));
 
 pub fn color_panel(
     color: PaletteColor,
-    sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>
+    sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
 ) -> Dom {
     let hue: Mutable<f32> = color.hue.clone();
     let hue2: Mutable<f32> = color.hue.clone();
@@ -209,9 +209,10 @@ fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, Sampli
         })
     });
 
-    let sampling_curve_signal = curve_id.signal().map(move |id| {
-        curves.signal_map_cloned().key_cloned(id)
-    }).flatten();
+    let sampling_curve_signal = curve_id
+        .signal()
+        .map(move |id| curves.signal_map_cloned().key_cloned(id))
+        .flatten();
 
     let editor = sampling_curve_signal.map(move |curve| {
         curve.map(move |curve| {
@@ -221,7 +222,6 @@ fn color_edit(color: PaletteColor, sampling_curves: MutableBTreeMap<Uuid, Sampli
             })
         })
     });
-
 
     let color_list = html!("div", {
         .dwclass!("flex flex-col gap-2")
@@ -266,15 +266,18 @@ impl InputValueWrapper for HueHexWrapper {
         ValidationResult::Valid
     }
 
-    fn value_signal_cloned(&self) -> impl Signal<Item = String> + 'static {
-        self.0.signal_cloned().map(|h| {
-            let hsl = hsl::HSL {
-                h: h as f64,
-                s: 1.,
-                l: 0.5,
-            };
-            let rgb = hsl.to_rgb();
-            format!("#{:02x}{:02x}{:02x}", rgb.0, rgb.1, rgb.2)
-        })
+    fn value_signal_cloned(&self) -> LocalBoxSignal<'static, String> {
+        self.0
+            .signal_cloned()
+            .map(|h| {
+                let hsl = hsl::HSL {
+                    h: h as f64,
+                    s: 1.,
+                    l: 0.5,
+                };
+                let rgb = hsl.to_rgb();
+                format!("#{:02x}{:02x}{:02x}", rgb.0, rgb.1, rgb.2)
+            })
+            .boxed_local()
     }
 }

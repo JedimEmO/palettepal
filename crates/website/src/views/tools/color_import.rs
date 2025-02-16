@@ -21,7 +21,9 @@ pub fn color_import_tool(vm: &PalettePalViewModel) -> Dom {
 fn color_import_tool_body(vm: &PalettePalViewModel) -> Dom {
     let json_text = Mutable::new("".to_string());
     let color_signal = json_text.signal_ref(|text| {
-        serde_json::from_str::<Color>(&text).map(Some).unwrap_or(None)
+        serde_json::from_str::<Color>(&text)
+            .map(Some)
+            .unwrap_or(None)
     });
 
     let palette = vm.palette.clone();

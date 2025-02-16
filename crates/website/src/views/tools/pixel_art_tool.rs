@@ -5,15 +5,15 @@ use crate::views::tools::Tool;
 use dominator::events::MouseButton;
 use dominator::{events, Dom};
 use dwind::prelude::*;
+use futures::{FutureExt, StreamExt};
 use futures_signals::signal::SignalExt;
 use futures_signals::signal::{always, Mutable, Signal};
 use futures_signals::signal_vec::{MutableVec, SignalVecExt, VecDiff};
 use std::time::Duration;
-use futures::{FutureExt, StreamExt};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use web_sys::console::info;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 pub fn pixel_art_tool(vm: &PalettePalViewModel) -> impl Signal<Item = Dom> {
     vm.palette.signal_ref(|palette| {

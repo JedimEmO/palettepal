@@ -1,6 +1,6 @@
 use dominator::{events, DomBuilder};
 use dwind::prelude::*;
-use futures_signals::signal::{Signal};
+use futures_signals::signal::Signal;
 use web_sys::{Element, HtmlElement};
 
 pub fn panel_mixin<T: AsRef<Element>>(b: DomBuilder<T>) -> DomBuilder<T> {
@@ -13,7 +13,7 @@ pub fn panel_mixin<T: AsRef<Element>>(b: DomBuilder<T>) -> DomBuilder<T> {
 
 pub fn widget_panel_mixin(
     label: impl Signal<Item = String> + 'static,
-    on_close: Option<Box<dyn Fn() -> () + 'static>>
+    on_close: Option<Box<dyn Fn() -> () + 'static>>,
 ) -> impl FnOnce(DomBuilder<HtmlElement>) -> DomBuilder<HtmlElement> {
     move |b| {
         panel_mixin(b.apply(move |b| {

@@ -1,16 +1,16 @@
-use std::time::Duration;
-use dwind_build::colors::Color;
-use futures_signals::signal::SignalExt;
+use crate::model::palette_color::ColorSpace::HSV;
 use crate::model::palette_color::{ColorSpace, PaletteColor};
 use crate::model::sampling_curve::SamplingCurve;
+use crate::views::tools::ToolsViewState;
+use dwind_build::colors::Color;
+use futures_signals::signal::SignalExt;
 use futures_signals::signal_map::MutableBTreeMap;
 use futures_signals::signal_vec::{MutableVec, SignalVec, SignalVecExt};
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use uuid::Uuid;
 use wasm_bindgen::UnwrapThrowExt;
-use crate::model::palette_color::ColorSpace::HSV;
-use crate::views::tools::ToolsViewState;
 
 pub const TAILWIND_NUMBERS: [u32; 11] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
@@ -19,7 +19,7 @@ pub struct Palette {
     pub colors: MutableVec<PaletteColor>,
     pub sampling_curves: MutableBTreeMap<Uuid, SamplingCurve>,
     #[serde(default)]
-    pub tools_view_state: ToolsViewState
+    pub tools_view_state: ToolsViewState,
 }
 
 impl Palette {
@@ -56,16 +56,22 @@ impl Palette {
         let mut hue = 0.;
 
         for (shade, color) in color.shades {
-            let hex = hex_color::HexColor::parse(&color).expect_throw("Failed to parse color {shade}");
-            let hsv = rgb_hsv::rgb_to_hsv((hex.r as f32 / 256., hex.g as f32 / 256., hex.b as f32 / 256.));
+            let hex =
+                hex_color::HexColor::parse(&color).expect_throw("Failed to parse color {shade}");
+            let hsv = rgb_hsv::rgb_to_hsv((
+                hex.r as f32 / 256.,
+                hex.g as f32 / 256.,
+                hex.b as f32 / 256.,
+            ));
             hue = hsv.0 * 360.;
             curve.curve.lock_mut().push(Vec2::new(hsv.1, hsv.2))
         }
 
         curve.sort();
 
-        self.sampling_curves.lock_mut().insert_cloned(curve_id, curve);
-
+        self.sampling_curves
+            .lock_mut()
+            .insert_cloned(curve_id, curve);
 
         let mut palette_color = PaletteColor::new(hue);
         palette_color.name.set(color.name);
@@ -103,7 +109,9 @@ impl Palette {
 
         colors.replace_cloned(
             colors
-                .iter().filter(|&v| (v.hue.get() - hue).abs() >= 2.).cloned()
+                .iter()
+                .filter(|&v| (v.hue.get() - hue).abs() >= 2.)
+                .cloned()
                 .collect::<Vec<_>>(),
         );
     }
@@ -123,7 +131,7 @@ impl Palette {
         palette.to_string()
     }
 
-    pub fn palette_colors_signal(&self) -> impl SignalVec<Item=(u8, u8, u8)> {
+    pub fn palette_colors_signal(&self) -> impl SignalVec<Item = (u8, u8, u8)> {
         let curves = self.sampling_curves.clone();
 
         self.colors.signal_vec_cloned().map(clone!(curves => move |color| {

@@ -1,6 +1,7 @@
 use crate::mixins::panel::widget_panel_mixin;
 use crate::model::palette::Palette;
 use crate::views::main_view::PalettePalViewModel;
+use crate::views::tools::Tool;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
 use futures_signals::signal::{always, Mutable, SignalExt};
@@ -9,7 +10,6 @@ use std::rc::Rc;
 use std::time::Duration;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use crate::views::tools::Tool;
 
 pub fn palette_overview(vm: PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;

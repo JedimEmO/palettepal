@@ -45,7 +45,7 @@ impl ColorQuad {
             context,
             include_str!("vertex.glsl"),
             include_str!("fragment.glsl"),
-            vertices
+            vertices,
         )?;
 
         Ok(Self { shader_program })

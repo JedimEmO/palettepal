@@ -10,7 +10,7 @@ pub struct ColorSpaceVertex {
 
 pub struct ShaderProgram {
     pub program: WebGlProgram,
-    pub vertices: Vec<ColorSpaceVertex>
+    pub vertices: Vec<ColorSpaceVertex>,
 }
 
 impl ShaderProgram {
@@ -33,9 +33,6 @@ impl ShaderProgram {
         )?;
         let program = link_program(context, &vert, &frag)?;
 
-        Ok(Self {
-            program,
-            vertices,
-        })
+        Ok(Self { program, vertices })
     }
 }

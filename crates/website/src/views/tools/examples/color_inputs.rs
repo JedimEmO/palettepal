@@ -2,7 +2,7 @@ use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
 use dominator::Dom;
 use dwui::prelude::*;
-use futures_signals::signal::{always, Mutable, Signal, SignalExt};
+use futures_signals::signal::{always, LocalBoxSignal, Mutable, Signal, SignalExt};
 use futures_signals::signal_vec::SignalVec;
 use std::rc::Rc;
 
@@ -30,7 +30,7 @@ impl InputValueWrapper for ColorAdapter {
         ValidationResult::Valid
     }
 
-    fn value_signal_cloned(&self) -> impl Signal<Item = String> + 'static {
+    fn value_signal_cloned(&self) -> LocalBoxSignal<'static, String> {
         self.color
             .signal_cloned()
             .map(|v| {
@@ -38,6 +38,7 @@ impl InputValueWrapper for ColorAdapter {
                     .unwrap_or(always("".to_string()).boxed())
             })
             .flatten()
+            .boxed_local()
     }
 }
 

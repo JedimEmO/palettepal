@@ -3,6 +3,7 @@ use crate::mixins::panel::{panel_mixin, widget_panel_mixin};
 use crate::model::palette::Palette;
 use crate::model::sampling_curve::{Modifiers, SamplingCurve};
 use crate::views::main_view::PalettePalViewModel;
+use crate::views::tools::Tool;
 use dominator::events::MouseButton;
 use dominator::{events, Dom, EventOptions};
 use dwind::prelude::*;
@@ -12,7 +13,6 @@ use futures_signals::signal_map::SignalMapExt;
 use futures_signals::signal_vec::SignalVecExt;
 use glam::Vec2;
 use uuid::Uuid;
-use crate::views::tools::Tool;
 
 pub fn sampling_curve_editor(vm: &PalettePalViewModel) -> Dom {
     let PalettePalViewModel { palette, .. } = vm;

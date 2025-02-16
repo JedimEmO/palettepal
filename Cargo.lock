@@ -170,9 +170,9 @@ dependencies = [
 
 [[package]]
 name = "dwind"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f29a70768204f2f501ec7351e0db1842cf784c9b7f284470ba2b51caa0156ea5"
+checksum = "e79243715e1d72b02d2ab0fdfb12a55b67d6ac14fb3210460b1fcb5cbe952568"
 dependencies = [
  "const_format",
  "dominator",
@@ -209,9 +209,9 @@ dependencies = [
 
 [[package]]
 name = "dwind-macros"
-version = "0.2.0"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f03ba9b5922529755ff2ee58568b66d7ef26e01830a5af2e302ec69606d8550c"
+checksum = "bf4cd3f28ba5574049b51cd8a9b9d3e3cd367f0364421a7ad595b6fb3884af14"
 dependencies = [
  "dominator",
  "dwind-base",
@@ -223,9 +223,9 @@ dependencies = [
 
 [[package]]
 name = "dwui"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "599cce0499d794f56819aa3f380766ae8c0c91644c8559cf9e1ced7c5ac77342"
+checksum = "4615b6b2c8c7142664ef35a895b99eae090b7cb3653a95d894e645158bf85528"
 dependencies = [
  "const_format",
  "dominator",
@@ -233,7 +233,7 @@ dependencies = [
  "dwind",
  "dwind-macros",
  "futures-signals",
- "futures-signals-component-macro 0.1.1",
+ "futures-signals-component-macro 0.4.0",
  "once_cell",
  "serde",
  "web-sys",
@@ -325,9 +325,9 @@ dependencies = [
 
 [[package]]
 name = "futures-signals-component-macro"
-version = "0.1.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b79e4305cce6403d6ee1112a80166f6d2707bc0f6996ee56a8ad5678fa4ae4f"
+checksum = "2d9df8f39b67d762e734521e9a3444ef6fd0c8700f91312571d17d9da84e9e99"
 dependencies = [
  "convert_case",
  "dominator",
@@ -338,9 +338,9 @@ dependencies = [
 
 [[package]]
 name = "futures-signals-component-macro"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d9df8f39b67d762e734521e9a3444ef6fd0c8700f91312571d17d9da84e9e99"
+checksum = "f880902471275d8da2913632c5e794e6bee9e846bf29fddec1cbd7e3c105675c"
 dependencies = [
  "convert_case",
  "dominator",

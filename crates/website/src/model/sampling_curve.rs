@@ -66,15 +66,13 @@ impl SamplingCurve {
     }
 
     pub fn sort(&self) {
-        self.curve
-            .lock_mut()
-            .sort_by(|lhs, rhs| {
-                if rhs.x.max(lhs.x) - rhs.x.min(lhs.x) < 0.0001 {
-                    return rhs.y.total_cmp(&lhs.y)
-                }
+        self.curve.lock_mut().sort_by(|lhs, rhs| {
+            if rhs.x.max(lhs.x) - rhs.x.min(lhs.x) < 0.0001 {
+                return rhs.y.total_cmp(&lhs.y);
+            }
 
-                lhs.x.total_cmp(&rhs.x)
-            })
+            lhs.x.total_cmp(&rhs.x)
+        })
     }
 }
 

@@ -1,16 +1,18 @@
-use crate::mixins::panel::{widget_panel_mixin};
+use crate::mixins::panel::widget_panel_mixin;
 use crate::model::palette::Palette;
 use crate::model::palette_color::PaletteColor;
+use crate::views::main_view::PalettePalViewModel;
 use crate::views::tools::examples::color_inputs::color_input;
-use color::contrast::{is_enhanced_text_contrast, is_minimum_text_contrast, SwatchColorContrast, RGBA};
+use crate::views::tools::Tool;
+use color::contrast::{
+    is_enhanced_text_contrast, is_minimum_text_contrast, SwatchColorContrast, RGBA,
+};
 use dominator::Dom;
 use dwind::prelude::*;
 use futures_signals::map_ref;
 use futures_signals::signal::{always, Mutable, Signal, SignalExt};
 use futures_signals::signal_vec::{SignalVec, SignalVecExt};
 use std::rc::Rc;
-use crate::views::main_view::PalettePalViewModel;
-use crate::views::tools::Tool;
 
 pub fn wcag_tool(_vm: &PalettePalViewModel, palette: &Palette) -> Dom {
     let color_a = Mutable::new(palette.colors.lock_ref().get(0).cloned());
@@ -27,13 +29,19 @@ pub fn wcag_tool(_vm: &PalettePalViewModel, palette: &Palette) -> Dom {
     }
     .broadcast();
 
-    let text_minimum_contrasts_signal = contrasts_signal.signal_cloned().to_signal_vec().filter(|contrast| {
-        is_minimum_text_contrast(contrast.color_a, contrast.color_b) && !is_enhanced_text_contrast(contrast.color_a, contrast.color_b)
-    });
+    let text_minimum_contrasts_signal =
+        contrasts_signal
+            .signal_cloned()
+            .to_signal_vec()
+            .filter(|contrast| {
+                is_minimum_text_contrast(contrast.color_a, contrast.color_b)
+                    && !is_enhanced_text_contrast(contrast.color_a, contrast.color_b)
+            });
 
-    let text_enhanced_contrast_signal = contrasts_signal.signal_cloned().to_signal_vec().filter(|contrast| {
-        is_enhanced_text_contrast(contrast.color_a, contrast.color_b)
-    });
+    let text_enhanced_contrast_signal = contrasts_signal
+        .signal_cloned()
+        .to_signal_vec()
+        .filter(|contrast| is_enhanced_text_contrast(contrast.color_a, contrast.color_b));
 
     let color_names_signal_vec = palette
         .colors
@@ -98,7 +106,9 @@ pub fn wcag_tool(_vm: &PalettePalViewModel, palette: &Palette) -> Dom {
         }))
     });
 
-    let close_cb = palette.tools_view_state.create_close_tool_handler(Tool::WcagContrast);
+    let close_cb = palette
+        .tools_view_state
+        .create_close_tool_handler(Tool::WcagContrast);
     html!("div", {
         .dwclass!("flex-1 p-2 relative")
         .apply(widget_panel_mixin(always("WCAG Text Contrast Analysis".to_string()), Some(close_cb)))
@@ -106,14 +116,28 @@ pub fn wcag_tool(_vm: &PalettePalViewModel, palette: &Palette) -> Dom {
     })
 }
 
-fn contrasts_display(contrasts: impl SignalVec<Item=SwatchColorContrast> ) -> impl SignalVec<Item=Dom> {
+fn contrasts_display(
+    contrasts: impl SignalVec<Item = SwatchColorContrast>,
+) -> impl SignalVec<Item = Dom> {
     contrasts.map(|contrast| {
-        let first_color = format!("rgb({}, {}, {})", contrast.color_a.0, contrast.color_a.1, contrast.color_a.2);
-        let first_hex = format!("#{:02x}{:02x}{:02x}", contrast.color_a.0, contrast.color_a.1, contrast.color_a.2);
+        let first_color = format!(
+            "rgb({}, {}, {})",
+            contrast.color_a.0, contrast.color_a.1, contrast.color_a.2
+        );
+        let first_hex = format!(
+            "#{:02x}{:02x}{:02x}",
+            contrast.color_a.0, contrast.color_a.1, contrast.color_a.2
+        );
         let first_tailwind = index_to_tailwind_number(contrast.swatch_a_idx);
 
-        let second_color = format!("rgb({}, {}, {})", contrast.color_b.0, contrast.color_b.1, contrast.color_b.2);
-        let second_hex = format!("#{:02x}{:02x}{:02x}", contrast.color_b.0, contrast.color_b.1, contrast.color_b.2);
+        let second_color = format!(
+            "rgb({}, {}, {})",
+            contrast.color_b.0, contrast.color_b.1, contrast.color_b.2
+        );
+        let second_hex = format!(
+            "#{:02x}{:02x}{:02x}",
+            contrast.color_b.0, contrast.color_b.1, contrast.color_b.2
+        );
         let second_tailwind = index_to_tailwind_number(contrast.swatch_b_idx);
 
         html!("div", {
@@ -156,7 +180,6 @@ fn color_shades_signal(
         })
         .flatten()
 }
-
 
 fn index_to_tailwind_number(index: usize) -> usize {
     match index {
